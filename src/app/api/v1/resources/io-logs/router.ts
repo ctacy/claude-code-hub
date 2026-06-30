@@ -47,7 +47,8 @@ ioLogsRouter.openapi(
     middleware: requireAuth("admin"),
     tags: ["I/O Logs"],
     summary: "List request I/O logs",
-    description: "Returns paginated request/response body logs. Requires ENABLE_IO_BODY_LOGGING=true.",
+    description:
+      "Returns paginated request/response body logs. Requires ENABLE_IO_BODY_LOGGING=true.",
     "x-required-access": "admin",
     security,
     request: { query: IoLogListQuerySchema },

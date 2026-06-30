@@ -5,12 +5,7 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RelativeTime } from "@/components/ui/relative-time";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { IoLogItem } from "@/lib/api-client/v1/actions/io-logs";
 
 interface IoLogDetailSheetProps {
@@ -62,9 +57,7 @@ export function IoLogDetailSheet({ log, open, onOpenChange }: IoLogDetailSheetPr
           <div className="flex flex-col gap-0 overflow-y-auto flex-1">
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-2.5 text-sm">
-              <span className="font-mono text-xs text-muted-foreground">
-                #{log.requestId}
-              </span>
+              <span className="font-mono text-xs text-muted-foreground">#{log.requestId}</span>
               {(log.originalModel ?? log.model) && (
                 <Badge variant="secondary" className="text-[10px]">
                   {log.originalModel ?? log.model}

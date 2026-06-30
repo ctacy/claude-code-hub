@@ -14,9 +14,7 @@ import { IoLogDetailSheet } from "./io-log-detail-sheet";
 const BATCH_SIZE = 50;
 const ROW_HEIGHT = 56;
 
-function statusVariant(
-  code: number | null
-): "default" | "destructive" | "outline" | "secondary" {
+function statusVariant(code: number | null): "default" | "destructive" | "outline" | "secondary" {
   if (!code) return "outline";
   if (code >= 200 && code < 300) return "default";
   if (code >= 400) return "destructive";
@@ -68,10 +66,7 @@ export function IoLogsView() {
   const pages = data?.pages;
   const rows = useMemo(() => pages?.flatMap((p) => p.items) ?? [], [pages]);
 
-  const getItemKey = useCallback(
-    (index: number) => rows[index]?.id ?? `loader-${index}`,
-    [rows]
-  );
+  const getItemKey = useCallback((index: number) => rows[index]?.id ?? `loader-${index}`, [rows]);
 
   const { parentRef, rowVirtualizer, virtualItems, handleScroll } = useVirtualizedInfiniteList({
     itemCount: rows.length + (hasNextPage ? 1 : 0),
@@ -183,10 +178,7 @@ export function IoLogsView() {
                     </div>
                     <div className="flex-[0.5] min-w-[60px] px-1.5">
                       {log.statusCode ? (
-                        <Badge
-                          variant={statusVariant(log.statusCode)}
-                          className="text-[10px]"
-                        >
+                        <Badge variant={statusVariant(log.statusCode)} className="text-[10px]">
                           {log.statusCode}
                         </Badge>
                       ) : (
@@ -196,9 +188,7 @@ export function IoLogsView() {
                     <div
                       className="flex-[2.5] min-w-[200px] px-1.5 pr-3 font-mono text-xs truncate text-muted-foreground"
                       title={
-                        log.requestBody
-                          ? JSON.stringify(log.requestBody).slice(0, 200)
-                          : undefined
+                        log.requestBody ? JSON.stringify(log.requestBody).slice(0, 200) : undefined
                       }
                     >
                       {requestPreview(log.requestBody)}

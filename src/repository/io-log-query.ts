@@ -61,9 +61,7 @@ export async function listIoLogs(params: {
   const items = hasMore ? rows.slice(0, limit) : rows;
   const last = items[items.length - 1];
   const nextCursor =
-    hasMore && last
-      ? { createdAt: last.createdAt.toISOString(), id: last.id }
-      : null;
+    hasMore && last ? { createdAt: last.createdAt.toISOString(), id: last.id } : null;
 
   return { items: items as IoLogRow[], nextCursor };
 }
