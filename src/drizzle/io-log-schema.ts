@@ -5,7 +5,7 @@
  * Stores full request body (JSON) and response body (text) per request.
  * Controlled by env ENABLE_IO_BODY_LOGGING (default: false).
  */
-import { index, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const requestIoLog = pgTable(
   "request_io_log",
@@ -13,8 +13,8 @@ export const requestIoLog = pgTable(
     id: serial("id").primaryKey(),
     /** FK to message_request.id (soft reference — avoids circular import and migration entanglement) */
     requestId: integer("request_id").notNull(),
-    /** Full request body as sent by the client (session.request.message) */
-    requestBody: jsonb("request_body"),
+    /** Last user message text (plain string, stripped of tools/system) */
+    requestBody: text("request_body"),
     /** Full upstream response body; truncated at IO_LOG_MAX_RESPONSE_BYTES if oversized */
     responseBody: text("response_body"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

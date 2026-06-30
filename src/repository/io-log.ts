@@ -10,7 +10,7 @@ export const IO_LOG_MAX_RESPONSE_BYTES = 1_000_000; // 1 MB
  */
 export async function insertRequestIoLog(params: {
   requestId: number;
-  requestBody: Record<string, unknown> | null;
+  requestBody: string | null;
   responseBody: string | null;
 }): Promise<void> {
   const truncated =

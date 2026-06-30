@@ -148,7 +148,7 @@ export function fireAndForgetIoLog(
 
   insertRequestIoLog({
     requestId,
-    requestBody: userMessage ? { user_message: userMessage } : null,
+    requestBody: userMessage ?? null,
     responseBody: assistantText || null,
   }).catch((err) => {
     logger.warn("[IoLog] Failed to persist request I/O log", {

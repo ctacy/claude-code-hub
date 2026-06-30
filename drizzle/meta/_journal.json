@@ -750,6 +750,13 @@
       "when": 1751241600000,
       "tag": "0106_request_io_log",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1751328000000,
+      "tag": "0107_io_log_request_body_text",
+      "breakpoints": true
     }
   ]
 }
