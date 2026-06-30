@@ -20,11 +20,21 @@ import { insertRequestIoLog } from "@/repository/io-log";
  * Handles both string content and content-block arrays.
  */
 function extractLastUserMessage(message: Record<string, unknown>): string | null {
-  const messages = message.messages;
-  if (!Array.isArray(messages)) return null;
+  // Anthropic / OpenAI-chat format: messages[]
+  // Responses API (Codex / gpt-5.x) format: input[]
+  const list = Array.isArray(message.messages)
+    ? message.messages
+    : Array.isArray(message.input)
+      ? message.input
+      : null;
+  if (!list) {
+    // Responses API may also send `input` as a plain string
+    if (typeof message.input === "string") return message.input;
+    return null;
+  }
 
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i] as Record<string, unknown>;
+  for (let i = list.length - 1; i >= 0; i--) {
+    const msg = list[i] as Record<string, unknown>;
     if (msg.role !== "user") continue;
 
     const content = msg.content;
@@ -36,7 +46,9 @@ function extractLastUserMessage(message: Record<string, unknown>): string | null
           (c): c is { type: string; text: string } =>
             typeof c === "object" &&
             c !== null &&
-            (c as Record<string, unknown>).type === "text" &&
+            // Anthropic: type "text"; Responses API: type "input_text"
+            ((c as Record<string, unknown>).type === "text" ||
+              (c as Record<string, unknown>).type === "input_text") &&
             typeof (c as Record<string, unknown>).text === "string"
         )
         .map((c) => c.text)
@@ -69,6 +81,23 @@ function extractAssistantText(responseText: string): string {
         ) {
           const t = (data.delta as Record<string, unknown>).text;
           if (typeof t === "string") texts.push(t);
+        }
+      } catch {
+        // ignore malformed SSE lines
+      }
+    }
+    if (texts.length > 0) return texts.join("");
+  }
+
+  // Responses API SSE path (Codex / gpt-5.x): response.output_text.delta
+  if (responseText.includes("response.output_text.delta")) {
+    const texts: string[] = [];
+    for (const line of responseText.split("\n")) {
+      if (!line.startsWith("data: ")) continue;
+      try {
+        const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
+        if (data.type === "response.output_text.delta" && typeof data.delta === "string") {
+          texts.push(data.delta);
         }
       } catch {
         // ignore malformed SSE lines
