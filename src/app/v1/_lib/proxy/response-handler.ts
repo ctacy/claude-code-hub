@@ -2508,6 +2508,10 @@ export class ProxyResponseHandler {
         const duration = Date.now() - session.startTime;
         await updateMessageRequestDuration(messageContext.id, duration);
 
+        // I/O 日志：标准（非 Gemini）SSE 流式收口点。此路不经过
+        // finalizeRequestStats，必须单独记录完整响应体。
+        fireAndForgetIoLog(session, messageContext.id, allContent);
+
         const tracker = ProxyStatusTracker.getInstance();
         tracker.endRequest(messageContext.user.id, messageContext.id);
 
