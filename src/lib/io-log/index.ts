@@ -87,7 +87,9 @@ function extractAssistantText(responseText: string): string {
         const choices = data.choices;
         if (Array.isArray(choices)) {
           for (const c of choices) {
-            const delta = (c as Record<string, unknown>).delta as Record<string, unknown> | undefined;
+            const delta = (c as Record<string, unknown>).delta as
+              | Record<string, unknown>
+              | undefined;
             if (typeof delta?.content === "string") texts.push(delta.content);
           }
         }
@@ -106,9 +108,7 @@ function extractAssistantText(responseText: string): string {
       const text = content
         .filter(
           (c): c is { type: string; text: string } =>
-            typeof c === "object" &&
-            c !== null &&
-            (c as Record<string, unknown>).type === "text"
+            typeof c === "object" && c !== null && (c as Record<string, unknown>).type === "text"
         )
         .map((c) => c.text)
         .join("");
