@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, lt, or } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { requestIoLog } from "@/drizzle/io-log-schema";
 import { messageRequest } from "@/drizzle/schema";
@@ -31,13 +31,13 @@ export async function listIoLogs(params: {
   const limit = Math.min(params.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
 
   const cursorCondition = params.cursor
-    ? or(
-        lt(requestIoLog.createdAt, new Date(params.cursor.createdAt)),
-        and(
-          sql`${requestIoLog.createdAt} = ${new Date(params.cursor.createdAt)}`,
-          lt(requestIoLog.id, params.cursor.id)
-        )
-      )
+    ? (() => {
+        const cursorCreatedAt = new Date(params.cursor.createdAt);
+        return or(
+          lt(requestIoLog.createdAt, cursorCreatedAt),
+          and(eq(requestIoLog.createdAt, cursorCreatedAt), lt(requestIoLog.id, params.cursor.id))
+        );
+      })()
     : undefined;
 
   const rows = await db
