@@ -48,6 +48,7 @@ import type { LongContextPricingSpecialSetting } from "@/types/special-settings"
 import { GeminiAdapter } from "../gemini/adapter";
 import type { GeminiResponse } from "../gemini/types";
 import { extractActualResponseModelForProvider } from "./actual-response-model";
+import { fireAndForgetIoLog } from "@/lib/io-log";
 import { bindClientAbortListener } from "./client-abort-listener";
 import { isClientAbortError, isTransportError } from "./errors";
 import type { ProxySession } from "./session";
@@ -1556,13 +1557,9 @@ export class ProxyResponseHandler {
         }
 
         if (messageContext) {
+          fireAndForgetIoLog(session, messageContext.id, responseText);
           const duration = Date.now() - session.startTime;
           await updateMessageRequestDuration(messageContext.id, duration);
-
-          // 保存扩展信息（status code, tokens, provider chain）
-          await updateMessageRequestDetails(messageContext.id, {
-            statusCode: statusCode,
-            inputTokens: usageMetrics?.input_tokens,
             outputTokens: usageMetrics?.output_tokens,
             ttfbMs: session.ttfbMs ?? duration,
             cacheCreationInputTokens: usageMetrics?.cache_creation_input_tokens,
@@ -4057,6 +4054,8 @@ export async function finalizeRequestStats(
   if (!provider || !messageContext) {
     return null;
   }
+  // Record full I/O log — fire-and-forget, no impact on billing/stats path
+  fireAndForgetIoLog(session, messageContext.id, responseText);
   const resolvedIsStream = isStreaming ?? isSSEText(responseText);
 
   const providerIdForPersistence = providerIdOverride ?? session.provider?.id;
