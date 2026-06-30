@@ -8,7 +8,7 @@ import { messageRequest } from "@/drizzle/schema";
 export type IoLogRow = {
   id: number;
   requestId: number;
-  requestBody: Record<string, unknown> | null;
+  requestBody: string | null;
   responseBody: string | null;
   createdAt: Date;
   model: string | null;

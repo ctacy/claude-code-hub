@@ -3,6 +3,8 @@
   "description": "プロキシされた各APIリクエストの入力内容と出力レスポンスを閲覧します。",
   "empty": "I/O ログが見つかりません。ENABLE_IO_BODY_LOGGING=true を設定して記録を開始してください。",
   "loadError": "I/O ログの読み込みに失敗しました。",
+  "refresh": "更新",
+  "autoRefresh": "自動更新（5秒）",
   "columns": {
     "time": "時刻",
     "requestId": "リクエスト ID",

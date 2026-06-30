@@ -3,6 +3,8 @@
   "description": "Browse full request input and response output for each proxied API call.",
   "empty": "No I/O logs found. Enable ENABLE_IO_BODY_LOGGING=true to start recording.",
   "loadError": "Failed to load I/O logs.",
+  "refresh": "Refresh",
+  "autoRefresh": "Auto-refresh (5s)",
   "columns": {
     "time": "Time",
     "requestId": "Req ID",

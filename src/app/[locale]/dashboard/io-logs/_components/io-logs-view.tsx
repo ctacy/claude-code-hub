@@ -1,11 +1,13 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { RelativeTime } from "@/components/ui/relative-time";
+import { Switch } from "@/components/ui/switch";
 import { useVirtualizedInfiniteList } from "@/hooks/use-virtualized-infinite-list";
 import { getIoLogsBatch, type IoLogItem } from "@/lib/api-client/v1/actions/io-logs";
 import { cn } from "@/lib/utils";
@@ -13,6 +15,7 @@ import { IoLogDetailSheet } from "./io-log-detail-sheet";
 
 const BATCH_SIZE = 50;
 const ROW_HEIGHT = 56;
+const AUTO_REFRESH_INTERVAL_MS = 5000;
 
 function statusVariant(code: number | null): "default" | "destructive" | "outline" | "secondary" {
   if (!code) return "outline";
@@ -26,31 +29,28 @@ function truncate(str: string | null | undefined, max = 80): string {
   return str.length <= max ? str : `${str.slice(0, max)}…`;
 }
 
-function requestPreview(body: Record<string, unknown> | null): string {
+function requestPreview(body: string | null): string {
   if (!body) return "—";
-  const msgs = body.messages;
-  if (Array.isArray(msgs) && msgs.length > 0) {
-    const last = msgs[msgs.length - 1] as Record<string, unknown>;
-    const content = last?.content;
-    if (typeof content === "string") return truncate(content);
-    if (Array.isArray(content)) {
-      const text = content.find(
-        (c): c is { type: string; text: string } =>
-          typeof c === "object" && c !== null && (c as Record<string, unknown>).type === "text"
-      );
-      if (text?.text) return truncate(text.text);
-    }
-  }
-  return truncate(JSON.stringify(body));
+  return truncate(body);
 }
 
 export function IoLogsView() {
   const t = useTranslations("ioLogs");
   const [selectedLog, setSelectedLog] = useState<IoLogItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, error } =
-    useInfiniteQuery({
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useInfiniteQuery({
       queryKey: ["io-logs-batch"],
       queryFn: async ({ pageParam }) => {
         const result = await getIoLogsBatch({ cursor: pageParam ?? null, limit: BATCH_SIZE });
@@ -62,6 +62,15 @@ export function IoLogsView() {
       staleTime: 15_000,
       refetchOnWindowFocus: false,
     });
+
+  // 自动刷新：开启后每 5s 拉取最新一页（refetch 只重取已加载分页的第一页起，回到最新数据）
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const timer = setInterval(() => {
+      void refetch();
+    }, AUTO_REFRESH_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [autoRefresh, refetch]);
 
   const pages = data?.pages;
   const rows = useMemo(() => pages?.flatMap((p) => p.items) ?? [], [pages]);
@@ -85,6 +94,28 @@ export function IoLogsView() {
 
   return (
     <div className="space-y-4">
+      {/* Toolbar: 手动刷新 + 5s 自动刷新 */}
+      <div className="flex items-center justify-end gap-4">
+        <div className="flex items-center gap-2">
+          <Switch id="io-logs-auto-refresh" checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+          <label
+            htmlFor="io-logs-auto-refresh"
+            className="text-sm text-muted-foreground cursor-pointer select-none"
+          >
+            {t("autoRefresh")}
+          </label>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void refetch()}
+          disabled={isRefetching}
+        >
+          <RefreshCw className={cn("h-4 w-4 mr-1.5", isRefetching && "animate-spin")} />
+          {t("refresh")}
+        </Button>
+      </div>
+
       <div className="rounded-md border">
         {/* Header */}
         <div className="bg-muted/30 border-b sticky top-0 z-10">

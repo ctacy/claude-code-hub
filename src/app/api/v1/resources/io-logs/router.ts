@@ -19,7 +19,7 @@ const security: Array<Record<string, string[]>> = [
 const IoLogItemSchema = z.object({
   id: z.number(),
   requestId: z.number(),
-  requestBody: z.record(z.string(), z.unknown()).nullable(),
+  requestBody: z.string().nullable(),
   responseBody: z.string().nullable(),
   createdAt: z.string(),
   model: z.string().nullable(),
