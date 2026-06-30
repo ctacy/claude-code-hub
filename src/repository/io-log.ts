@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@/drizzle/db";
 import { requestIoLog } from "@/drizzle/io-log-schema";
 
