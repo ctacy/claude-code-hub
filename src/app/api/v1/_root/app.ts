@@ -6,6 +6,7 @@ import { createProblemResponse, fromZodError } from "@/lib/api/v1/_shared/error-
 import { jsonResponse } from "@/lib/api/v1/_shared/response-helpers";
 import { adminUserInsightsRouter } from "../resources/admin-user-insights/router";
 import { auditLogsRouter } from "../resources/audit-logs/router";
+import { ioLogsRouter } from "../resources/io-logs/router";
 import { dashboardRouter } from "../resources/dashboard/router";
 import { errorRulesRouter } from "../resources/error-rules/router";
 import { keysRouter } from "../resources/keys/router";
@@ -147,6 +148,7 @@ app.route("/", publicRouter);
 app.route("/", providerGroupsRouter);
 app.route("/", adminUserInsightsRouter);
 app.route("/", auditLogsRouter);
+app.route("/", ioLogsRouter);
 app.route("/", modelPricesRouter);
 app.route("/", dashboardRouter);
 app.route("/", sessionsRouter);
