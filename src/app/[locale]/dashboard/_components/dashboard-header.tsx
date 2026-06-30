@@ -23,6 +23,7 @@ export async function DashboardHeader({ session, locale }: DashboardHeaderProps)
   const NAV_ITEMS: (DashboardNavItem & { adminOnly?: boolean })[] = [
     { href: "/dashboard", label: t("dashboard") },
     { href: "/dashboard/logs", label: t("usageLogs") },
+    { href: "/dashboard/io-logs", label: t("ioLogs"), adminOnly: true },
     { href: "/dashboard/leaderboard", label: t("leaderboard") },
     { href: "/dashboard/availability", label: t("availability"), adminOnly: true },
     { href: "/dashboard/providers", label: t("providers"), adminOnly: true },
@@ -31,7 +32,6 @@ export async function DashboardHeader({ session, locale }: DashboardHeaderProps)
       : [{ href: "/dashboard/my-quota", label: t("myQuota") }]),
     { href: "/dashboard/users", label: t("userManagement") },
     documentationItem,
-    { href: "/dashboard/io-logs", label: t("ioLogs"), adminOnly: true },
     { href: "/settings", label: t("systemSettings"), adminOnly: true },
   ];
 

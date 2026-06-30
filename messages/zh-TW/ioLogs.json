@@ -1,5 +1,5 @@
 {
-  "title": "I/O 日誌",
+  "title": "請求日誌",
   "description": "查看每次代理請求的完整輸入內容與回應輸出。",
   "empty": "目前無 I/O 日誌記錄。請將 ENABLE_IO_BODY_LOGGING 設定為 true 後重試。",
   "loadError": "載入 I/O 日誌失敗。",

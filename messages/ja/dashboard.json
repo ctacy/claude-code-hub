@@ -814,7 +814,7 @@
     "providers": "プロバイダー管理",
     "auditLogs": "監査ログ",
     "documentation": "ドキュ",
-    "ioLogs": "I/O ログ",
+    "ioLogs": "リクエストログ",
     "systemSettings": "設定",
     "feedback": "フィードバック",
     "login": "ログイン",
