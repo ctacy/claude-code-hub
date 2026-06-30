@@ -1560,6 +1560,9 @@ export class ProxyResponseHandler {
           fireAndForgetIoLog(session, messageContext.id, responseText);
           const duration = Date.now() - session.startTime;
           await updateMessageRequestDuration(messageContext.id, duration);
+          await updateMessageRequestDetails(messageContext.id, {
+            statusCode,
+            inputTokens: usageMetrics?.input_tokens,
             outputTokens: usageMetrics?.output_tokens,
             ttfbMs: session.ttfbMs ?? duration,
             cacheCreationInputTokens: usageMetrics?.cache_creation_input_tokens,
