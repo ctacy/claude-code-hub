@@ -16,28 +16,24 @@ const security: Array<Record<string, string[]>> = [
   { apiKeyAuth: [] },
 ];
 
-const IoLogItemSchema = z
-  .object({
-    id: z.number(),
-    requestId: z.number(),
-    requestBody: z.record(z.unknown()).nullable(),
-    responseBody: z.string().nullable(),
-    createdAt: z.string(),
-    model: z.string().nullable(),
-    originalModel: z.string().nullable(),
-    statusCode: z.number().nullable(),
-  })
-  .openapi("IoLogItem");
+const IoLogItemSchema = z.object({
+  id: z.number(),
+  requestId: z.number(),
+  requestBody: z.record(z.string(), z.unknown()).nullable(),
+  responseBody: z.string().nullable(),
+  createdAt: z.string(),
+  model: z.string().nullable(),
+  originalModel: z.string().nullable(),
+  statusCode: z.number().nullable(),
+});
 
-const IoLogListResponseSchema = z
-  .object({
-    items: z.array(IoLogItemSchema),
-    pageInfo: z.object({
-      nextCursor: z.string().nullable(),
-      hasMore: z.boolean(),
-    }),
-  })
-  .openapi("IoLogListResponse");
+const IoLogListResponseSchema = z.object({
+  items: z.array(IoLogItemSchema),
+  pageInfo: z.object({
+    nextCursor: z.string().nullable(),
+    hasMore: z.boolean(),
+  }),
+});
 
 const IoLogListQuerySchema = z.object({
   cursor: z.string().optional(),
