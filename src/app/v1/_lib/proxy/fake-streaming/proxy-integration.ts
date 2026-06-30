@@ -1,5 +1,5 @@
-import { logger } from "@/lib/logger";
 import { fireAndForgetIoLog } from "@/lib/io-log";
+import { logger } from "@/lib/logger";
 import type { SystemSettings } from "@/types/system-config";
 import type { ClientFormat } from "../format-mapper";
 import { ProxyForwarder } from "../forwarder";
