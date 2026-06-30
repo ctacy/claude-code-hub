@@ -1169,3 +1169,6 @@ export const messageRequestRelations = relations(messageRequest, ({ one }) => ({
     references: [providers.id],
   }),
 }));
+
+// I/O log table — defined in a separate file to avoid merge conflicts with upstream schema changes
+export * from "./io-log-schema";
