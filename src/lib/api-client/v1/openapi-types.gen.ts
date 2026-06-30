@@ -1348,6 +1348,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/io-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List request I/O logs
+         * @description Returns paginated request/response body logs. Requires ENABLE_IO_BODY_LOGGING=true.
+         */
+        get: operations["getIoLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/model-prices": {
         parameters: {
             query?: never;
@@ -19303,6 +19323,155 @@ export interface operations {
             };
             /** @description Audit log not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @description Stable problem type URI or URN. */
+                        type: string;
+                        /** @description Short problem title. */
+                        title: string;
+                        /** @description HTTP status code. */
+                        status: number;
+                        /** @description Human-readable error detail. */
+                        detail: string;
+                        /** @description Request path that produced the problem. */
+                        instance: string;
+                        /** @description Application error code for frontend i18n. */
+                        errorCode: string;
+                        /** @description Optional i18n parameters. */
+                        errorParams?: {
+                            [key: string]: unknown;
+                        };
+                        /** @description Optional request trace identifier. */
+                        traceId?: string;
+                        /** @description Validation failure details. */
+                        invalidParams?: {
+                            /** @description Path to the invalid input field. */
+                            path: (string | number)[];
+                            /** @description Machine-readable validation error code. */
+                            code: string;
+                            /** @description Validation error message. */
+                            message: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    getIoLogs: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description I/O log page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: number;
+                            requestId: number;
+                            requestBody: string | null;
+                            responseBody: string | null;
+                            createdAt: string;
+                            model: string | null;
+                            originalModel: string | null;
+                            statusCode: number | null;
+                        }[];
+                        pageInfo: {
+                            nextCursor: string | null;
+                            hasMore: boolean;
+                        };
+                    };
+                };
+            };
+            /** @description Invalid request. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @description Stable problem type URI or URN. */
+                        type: string;
+                        /** @description Short problem title. */
+                        title: string;
+                        /** @description HTTP status code. */
+                        status: number;
+                        /** @description Human-readable error detail. */
+                        detail: string;
+                        /** @description Request path that produced the problem. */
+                        instance: string;
+                        /** @description Application error code for frontend i18n. */
+                        errorCode: string;
+                        /** @description Optional i18n parameters. */
+                        errorParams?: {
+                            [key: string]: unknown;
+                        };
+                        /** @description Optional request trace identifier. */
+                        traceId?: string;
+                        /** @description Validation failure details. */
+                        invalidParams?: {
+                            /** @description Path to the invalid input field. */
+                            path: (string | number)[];
+                            /** @description Machine-readable validation error code. */
+                            code: string;
+                            /** @description Validation error message. */
+                            message: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** @description Stable problem type URI or URN. */
+                        type: string;
+                        /** @description Short problem title. */
+                        title: string;
+                        /** @description HTTP status code. */
+                        status: number;
+                        /** @description Human-readable error detail. */
+                        detail: string;
+                        /** @description Request path that produced the problem. */
+                        instance: string;
+                        /** @description Application error code for frontend i18n. */
+                        errorCode: string;
+                        /** @description Optional i18n parameters. */
+                        errorParams?: {
+                            [key: string]: unknown;
+                        };
+                        /** @description Optional request trace identifier. */
+                        traceId?: string;
+                        /** @description Validation failure details. */
+                        invalidParams?: {
+                            /** @description Path to the invalid input field. */
+                            path: (string | number)[];
+                            /** @description Machine-readable validation error code. */
+                            code: string;
+                            /** @description Validation error message. */
+                            message: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Admin access required. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
