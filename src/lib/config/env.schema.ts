@@ -134,6 +134,10 @@ export const EnvSchema = z.object({
   // - 该开关只影响“写入 Redis 的响应体内容”，不影响内部统计逻辑读取响应体（例如 tokens/费用统计、SSE 结束后的假 200 检测）。
   // - message 内容是否脱敏仍由 STORE_SESSION_MESSAGES 控制。
   STORE_SESSION_RESPONSE_BODY: z.string().default("true").transform(booleanTransform),
+  // I/O 日志开关：持久化每条请求的完整输入输出到 request_io_log 表
+  // - false (默认)：不记录，性能零开销
+  // - true：记录完整请求体（request_body）和响应体（response_body，截断至 1MB）
+  ENABLE_IO_BODY_LOGGING: z.string().default("false").transform(booleanTransform),
   DEBUG_MODE: z.string().default("false").transform(booleanTransform),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   TZ: z.string().default("Asia/Shanghai"),
