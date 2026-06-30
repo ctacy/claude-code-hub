@@ -1,0 +1,13 @@
+# docker-compose.override.yaml
+# 覆盖上游 docker-compose.yaml 中的 image 配置，改为从本地源码构建。
+# docker compose up -d --build 会自动合并此文件。
+#
+# 维护说明：
+# - 此文件与上游 docker-compose.yaml 无冲突（只覆盖 app.image 和 app.build）
+# - 上游更新后无需修改此文件
+services:
+  app:
+    image: claude-code-hub-local:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
