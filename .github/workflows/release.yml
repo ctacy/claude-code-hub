@@ -101,25 +101,13 @@ jobs:
         if: steps.check.outputs.needs_bump == 'true' || github.event_name == 'workflow_dispatch'
         id: get_version
         run: |
-          # 获取最新的tag版本
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Latest tag: $LATEST_TAG"
-          TAG_VERSION=${LATEST_TAG#v}
-
-          # 获取VERSION文件中的版本
+          # 对 fork 仓库采用独立版本线：始终以 VERSION 文件为准，
+          # 不受继承自上游仓库的历史 tag 影响。
           FILE_VERSION=$(cat VERSION | tr -d '[:space:]')
           echo "VERSION file: $FILE_VERSION"
 
-          # 比较tag版本和文件版本,取较大值
-          function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
-
-          if version_gt "$FILE_VERSION" "$TAG_VERSION"; then
-            VERSION="$FILE_VERSION"
-            echo "Using VERSION file: $VERSION (newer than tag)"
-          else
-            VERSION="$TAG_VERSION"
-            echo "Using tag version: $VERSION (newer or equal to file)"
-          fi
+          VERSION="$FILE_VERSION"
+          echo "Using VERSION file as authoritative source: $VERSION"
 
           echo "Current version: $VERSION"
           echo "current_version=$VERSION" >> $GITHUB_OUTPUT
