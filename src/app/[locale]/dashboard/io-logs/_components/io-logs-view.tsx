@@ -51,17 +51,17 @@ export function IoLogsView() {
     refetch,
     isRefetching,
   } = useInfiniteQuery({
-      queryKey: ["io-logs-batch"],
-      queryFn: async ({ pageParam }) => {
-        const result = await getIoLogsBatch({ cursor: pageParam ?? null, limit: BATCH_SIZE });
-        if (!result.ok) throw new Error(result.error ?? "Failed to fetch I/O logs");
-        return result.data;
-      },
-      getNextPageParam: (lastPage) => lastPage.pageInfo.nextCursor ?? undefined,
-      initialPageParam: undefined as string | undefined,
-      staleTime: 15_000,
-      refetchOnWindowFocus: false,
-    });
+    queryKey: ["io-logs-batch"],
+    queryFn: async ({ pageParam }) => {
+      const result = await getIoLogsBatch({ cursor: pageParam ?? null, limit: BATCH_SIZE });
+      if (!result.ok) throw new Error(result.error ?? "Failed to fetch I/O logs");
+      return result.data;
+    },
+    getNextPageParam: (lastPage) => lastPage.pageInfo.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+  });
 
   // 自动刷新：开启后每 5s 拉取最新一页（refetch 只重取已加载分页的第一页起，回到最新数据）
   useEffect(() => {
@@ -97,7 +97,11 @@ export function IoLogsView() {
       {/* Toolbar: 手动刷新 + 5s 自动刷新 */}
       <div className="flex items-center justify-end gap-4">
         <div className="flex items-center gap-2">
-          <Switch id="io-logs-auto-refresh" checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+          <Switch
+            id="io-logs-auto-refresh"
+            checked={autoRefresh}
+            onCheckedChange={setAutoRefresh}
+          />
           <label
             htmlFor="io-logs-auto-refresh"
             className="text-sm text-muted-foreground cursor-pointer select-none"
@@ -105,12 +109,7 @@ export function IoLogsView() {
             {t("autoRefresh")}
           </label>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void refetch()}
-          disabled={isRefetching}
-        >
+        <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isRefetching}>
           <RefreshCw className={cn("h-4 w-4 mr-1.5", isRefetching && "animate-spin")} />
           {t("refresh")}
         </Button>
