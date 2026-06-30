@@ -1,4 +1,5 @@
 import { logger } from "@/lib/logger";
+import { fireAndForgetIoLog } from "@/lib/io-log";
 import type { SystemSettings } from "@/types/system-config";
 import type { ClientFormat } from "../format-mapper";
 import { ProxyForwarder } from "../forwarder";
@@ -80,6 +81,12 @@ export async function tryFakeStreamingPath(
     });
   }
   const abortSignal = session.clientAbortSignal ?? new AbortController().signal;
+  const onFinalBody = (finalBody: string) => {
+    const requestId = session.messageContext?.id;
+    if (requestId) {
+      fireAndForgetIoLog(session, requestId, finalBody);
+    }
+  };
 
   if (isStream) {
     logger.debug("[FakeStreaming] taking stream path", {
@@ -94,6 +101,7 @@ export async function tryFakeStreamingPath(
       abortSignal,
       maxAttempts: MAX_ATTEMPTS,
       heartbeatIntervalMs: HEARTBEAT_INTERVAL_MS,
+      onFinalBody,
     });
   }
 
@@ -107,6 +115,7 @@ export async function tryFakeStreamingPath(
     performAttempt,
     abortSignal,
     maxAttempts: MAX_ATTEMPTS,
+    onFinalBody,
   });
 }
 

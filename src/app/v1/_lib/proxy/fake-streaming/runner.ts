@@ -13,6 +13,7 @@ export interface FakeStreamingRunInput {
   abortSignal: AbortSignal;
   maxAttempts: number;
   heartbeatIntervalMs: number;
+  onFinalBody?: (finalBody: string) => void;
 }
 
 /**
@@ -89,6 +90,7 @@ function buildStreamResponse(input: FakeStreamingRunInput): Response {
             return;
           }
           if (result.ok && typeof result.finalBody === "string") {
+            input.onFinalBody?.(result.finalBody);
             try {
               safeEnqueue(emitFinalStream({ family: input.family, finalBody: result.finalBody }));
             } catch {
@@ -177,6 +179,7 @@ export async function buildFakeStreamingNonStreamResponse(
   }
 
   if (result.ok && typeof result.finalBody === "string") {
+    input.onFinalBody?.(result.finalBody);
     return new Response(emitFinalNonStream({ family: input.family, finalBody: result.finalBody }), {
       status: 200,
       headers: {
