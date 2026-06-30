@@ -1,0 +1,18 @@
+{
+  "title": "I/O ログ",
+  "description": "プロキシされた各APIリクエストの入力内容と出力レスポンスを閲覧します。",
+  "empty": "I/O ログが見つかりません。ENABLE_IO_BODY_LOGGING=true を設定して記録を開始してください。",
+  "loadError": "I/O ログの読み込みに失敗しました。",
+  "columns": {
+    "time": "時刻",
+    "requestId": "リクエスト ID",
+    "model": "モデル",
+    "status": "ステータス",
+    "requestPreview": "リクエストプレビュー"
+  },
+  "detail": {
+    "title": "リクエスト詳細",
+    "requestBody": "リクエストボディ（入力）",
+    "responseBody": "レスポンスボディ（出力）"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "title": "I/O Logs",
+  "description": "Browse full request input and response output for each proxied API call.",
+  "empty": "No I/O logs found. Enable ENABLE_IO_BODY_LOGGING=true to start recording.",
+  "loadError": "Failed to load I/O logs.",
+  "columns": {
+    "time": "Time",
+    "requestId": "Req ID",
+    "model": "Model",
+    "status": "Status",
+    "requestPreview": "Request Preview"
+  },
+  "detail": {
+    "title": "Request Detail",
+    "requestBody": "Request Body (Input)",
+    "responseBody": "Response Body (Output)"
+  }
+}

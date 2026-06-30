@@ -817,6 +817,7 @@
     "providers": "Поставщики",
     "auditLogs": "Журнал аудита",
     "documentation": "Доки",
+    "ioLogs": "I/O Журнал",
     "systemSettings": "Настройки",
     "feedback": "Обратная связь",
     "login": "Вход",

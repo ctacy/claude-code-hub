@@ -1,4 +1,5 @@
 import auditLogs from "./auditLogs.json";
+import ioLogs from "./ioLogs.json";
 import auth from "./auth.json";
 import bigScreen from "./bigScreen.json";
 import common from "./common.json";
@@ -21,6 +22,7 @@ import validation from "./validation.json";
 
 export default {
   auditLogs,
+  ioLogs,
   auth,
   bigScreen,
   common,
