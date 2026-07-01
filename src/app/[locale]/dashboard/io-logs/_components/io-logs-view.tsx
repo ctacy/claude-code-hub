@@ -196,10 +196,16 @@ export function IoLogsView() {
                     <div className="flex-[0.7] min-w-[60px] px-1.5 font-mono text-xs truncate text-muted-foreground">
                       #{log.requestId}
                     </div>
-                    <div className="flex-[0.8] min-w-[80px] px-1.5 text-xs truncate" title={log.userName ?? ""}>
+                    <div
+                      className="flex-[0.8] min-w-[80px] px-1.5 text-xs truncate"
+                      title={log.userName ?? ""}
+                    >
                       {log.userName ?? <span className="text-muted-foreground">—</span>}
                     </div>
-                    <div className="flex-[0.8] min-w-[80px] px-1.5 text-xs truncate text-muted-foreground" title={log.keyName ?? ""}>
+                    <div
+                      className="flex-[0.8] min-w-[80px] px-1.5 text-xs truncate text-muted-foreground"
+                      title={log.keyName ?? ""}
+                    >
                       {log.keyName ?? "—"}
                     </div>
                     <div
