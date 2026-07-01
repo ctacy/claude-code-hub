@@ -19388,6 +19388,8 @@ export interface operations {
                             model: string | null;
                             originalModel: string | null;
                             statusCode: number | null;
+                            userName: string | null;
+                            keyName: string | null;
                         }[];
                         pageInfo: {
                             nextCursor: string | null;
