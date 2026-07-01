@@ -19365,6 +19365,9 @@ export interface operations {
             query?: {
                 cursor?: string;
                 limit?: number;
+                userName?: string;
+                startTime?: string;
+                endTime?: string;
             };
             header?: never;
             path?: never;
