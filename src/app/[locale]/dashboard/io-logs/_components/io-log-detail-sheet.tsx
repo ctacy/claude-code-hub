@@ -1,12 +1,12 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RelativeTime } from "@/components/ui/relative-time";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { IoLogItem } from "@/lib/api-client/v1/actions/io-logs";
+import { formatDate } from "@/lib/utils/date-format";
 
 interface IoLogDetailSheetProps {
   log: IoLogItem | null;
@@ -34,6 +34,7 @@ function statusVariant(code: number | null): "default" | "destructive" | "outlin
 
 export function IoLogDetailSheet({ log, open, onOpenChange }: IoLogDetailSheetProps) {
   const t = useTranslations("ioLogs");
+  const locale = useLocale();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -77,7 +78,7 @@ export function IoLogDetailSheet({ log, open, onOpenChange }: IoLogDetailSheetPr
                 </Badge>
               )}
               <span className="ml-auto font-mono text-xs text-muted-foreground">
-                <RelativeTime date={log.createdAt} fallback="—" />
+                {log.createdAt ? formatDate(log.createdAt, "yyyy-MM-dd HH:mm:ss", locale) : "—"}
               </span>
             </div>
 

@@ -9,10 +9,17 @@
     "time": "Время",
     "requestId": "ID запроса",
     "user": "Пользователь",
-    "token": "Токен",
+    "token": "Ключ",
     "model": "Модель",
     "status": "Статус",
     "requestPreview": "Превью запроса"
+  },
+  "filters": {
+    "startTime": "Начало",
+    "endTime": "Конец",
+    "allUsers": "Все пользователи",
+    "apply": "Поиск",
+    "reset": "Сброс"
   },
   "detail": {
     "title": "Детали запроса",

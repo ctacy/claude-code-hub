@@ -9,10 +9,17 @@
     "time": "Time",
     "requestId": "Req ID",
     "user": "User",
-    "token": "Token",
+    "token": "Key",
     "model": "Model",
     "status": "Status",
     "requestPreview": "Request Preview"
+  },
+  "filters": {
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "allUsers": "All Users",
+    "apply": "Search",
+    "reset": "Reset"
   },
   "detail": {
     "title": "Request Detail",

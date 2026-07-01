@@ -11,12 +11,21 @@ export type IoLogListResult = {
   };
 };
 
-export function getIoLogsBatch(params?: { cursor?: string | null; limit?: number }) {
+export function getIoLogsBatch(params?: {
+  cursor?: string | null;
+  limit?: number;
+  userName?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+}) {
   return toActionResult(
     apiGet<IoLogListResult>(
       `/api/v1/io-logs${searchParams({
         cursor: params?.cursor ?? undefined,
         limit: params?.limit ?? undefined,
+        userName: params?.userName ?? undefined,
+        startTime: params?.startTime ?? undefined,
+        endTime: params?.endTime ?? undefined,
       })}`
     )
   );

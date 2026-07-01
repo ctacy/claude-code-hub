@@ -9,10 +9,17 @@
     "time": "時刻",
     "requestId": "リクエスト ID",
     "user": "ユーザー",
-    "token": "トークン",
+    "token": "キー",
     "model": "モデル",
     "status": "ステータス",
     "requestPreview": "リクエストプレビュー"
+  },
+  "filters": {
+    "startTime": "開始時刻",
+    "endTime": "終了時刻",
+    "allUsers": "すべてのユーザー",
+    "apply": "検索",
+    "reset": "リセット"
   },
   "detail": {
     "title": "リクエスト詳細",

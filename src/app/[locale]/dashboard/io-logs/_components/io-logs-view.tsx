@@ -2,15 +2,24 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader2, RefreshCw } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RelativeTime } from "@/components/ui/relative-time";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useVirtualizedInfiniteList } from "@/hooks/use-virtualized-infinite-list";
 import { getIoLogsBatch, type IoLogItem } from "@/lib/api-client/v1/actions/io-logs";
+import { searchUsersForFilter } from "@/lib/api-client/v1/actions/users";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils/date-format";
 import { IoLogDetailSheet } from "./io-log-detail-sheet";
 
 const BATCH_SIZE = 50;
@@ -36,9 +45,52 @@ function requestPreview(body: string | null): string {
 
 export function IoLogsView() {
   const t = useTranslations("ioLogs");
+  const locale = useLocale();
   const [selectedLog, setSelectedLog] = useState<IoLogItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
+
+  // Filter inputs (draft) vs applied filters (drive the query)
+  const [userNameInput, setUserNameInput] = useState("");
+  const [startTimeInput, setStartTimeInput] = useState("");
+  const [endTimeInput, setEndTimeInput] = useState("");
+  const [filters, setFilters] = useState<{
+    userName: string;
+    startTime: string;
+    endTime: string;
+  }>({ userName: "", startTime: "", endTime: "" });
+
+  // User options for the filter dropdown (value = userName snapshot)
+  const [userOptions, setUserOptions] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void searchUsersForFilter(undefined, 500).then((result) => {
+      if (!alive || !result.ok) return;
+      // Dedupe by name; filter snapshots are matched by name
+      setUserOptions([...new Set(result.data.map((u) => u.name))]);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // datetime-local (no tz) → ISO string with offset; empty → null
+  const toIso = (v: string): string | null => (v ? new Date(v).toISOString() : null);
+
+  const applyFilters = useCallback(() => {
+    setFilters({
+      userName: userNameInput.trim(),
+      startTime: startTimeInput,
+      endTime: endTimeInput,
+    });
+  }, [userNameInput, startTimeInput, endTimeInput]);
+
+  const resetFilters = useCallback(() => {
+    setUserNameInput("");
+    setStartTimeInput("");
+    setEndTimeInput("");
+    setFilters({ userName: "", startTime: "", endTime: "" });
+  }, []);
 
   const {
     data,
@@ -51,9 +103,15 @@ export function IoLogsView() {
     refetch,
     isRefetching,
   } = useInfiniteQuery({
-    queryKey: ["io-logs-batch"],
+    queryKey: ["io-logs-batch", filters],
     queryFn: async ({ pageParam }) => {
-      const result = await getIoLogsBatch({ cursor: pageParam ?? null, limit: BATCH_SIZE });
+      const result = await getIoLogsBatch({
+        cursor: pageParam ?? null,
+        limit: BATCH_SIZE,
+        userName: filters.userName || null,
+        startTime: toIso(filters.startTime),
+        endTime: toIso(filters.endTime),
+      });
       if (!result.ok) throw new Error(result.error ?? "Failed to fetch I/O logs");
       return result.data;
     },
@@ -94,6 +152,61 @@ export function IoLogsView() {
 
   return (
     <div className="space-y-4">
+      {/* Filters: 用户名 + 时间范围 */}
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="io-logs-filter-user" className="text-xs text-muted-foreground">
+            {t("columns.user")}
+          </label>
+          <Select
+            value={userNameInput || "__all__"}
+            onValueChange={(v) => setUserNameInput(v === "__all__" ? "" : v)}
+          >
+            <SelectTrigger id="io-logs-filter-user" className="h-8 w-40">
+              <SelectValue placeholder={t("filters.allUsers")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">{t("filters.allUsers")}</SelectItem>
+              {userOptions.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="io-logs-filter-start" className="text-xs text-muted-foreground">
+            {t("filters.startTime")}
+          </label>
+          <Input
+            id="io-logs-filter-start"
+            type="datetime-local"
+            value={startTimeInput}
+            onChange={(e) => setStartTimeInput(e.target.value)}
+            className="h-8 w-52"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="io-logs-filter-end" className="text-xs text-muted-foreground">
+            {t("filters.endTime")}
+          </label>
+          <Input
+            id="io-logs-filter-end"
+            type="datetime-local"
+            value={endTimeInput}
+            onChange={(e) => setEndTimeInput(e.target.value)}
+            className="h-8 w-52"
+          />
+        </div>
+        <Button variant="default" size="sm" onClick={applyFilters}>
+          {t("filters.apply")}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={resetFilters}>
+          {t("filters.reset")}
+        </Button>
+      </div>
+
       {/* Toolbar: 手动刷新 + 5s 自动刷新 */}
       <div className="flex items-center justify-end gap-4">
         <div className="flex items-center gap-2">
@@ -119,7 +232,7 @@ export function IoLogsView() {
         {/* Header */}
         <div className="bg-muted/30 border-b sticky top-0 z-10">
           <div className="flex items-center h-9 text-xs font-medium text-muted-foreground/80 tracking-wide">
-            <div className="flex-[0.9] min-w-[120px] pl-3 truncate">{t("columns.time")}</div>
+            <div className="flex-[0.9] min-w-[150px] pl-3 truncate">{t("columns.time")}</div>
             <div className="flex-[0.7] min-w-[60px] px-1.5 truncate">{t("columns.requestId")}</div>
             <div className="flex-[0.8] min-w-[80px] px-1.5 truncate">{t("columns.user")}</div>
             <div className="flex-[0.8] min-w-[80px] px-1.5 truncate">{t("columns.token")}</div>
@@ -190,8 +303,8 @@ export function IoLogsView() {
                     )}
                     onClick={() => openDetail(log)}
                   >
-                    <div className="flex-[0.9] min-w-[120px] font-mono text-xs pl-3 truncate">
-                      <RelativeTime date={log.createdAt} fallback="—" format="short" />
+                    <div className="flex-[0.9] min-w-[150px] font-mono text-xs pl-3 truncate">
+                      {formatDate(log.createdAt, "yyyy-MM-dd HH:mm:ss", locale)}
                     </div>
                     <div className="flex-[0.7] min-w-[60px] px-1.5 font-mono text-xs truncate text-muted-foreground">
                       #{log.requestId}

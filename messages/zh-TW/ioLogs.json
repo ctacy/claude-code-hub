@@ -9,10 +9,17 @@
     "time": "時間",
     "requestId": "請求 ID",
     "user": "使用者",
-    "token": "Token",
+    "token": "密鑰",
     "model": "模型",
     "status": "狀態",
     "requestPreview": "請求預覽"
+  },
+  "filters": {
+    "startTime": "開始時間",
+    "endTime": "結束時間",
+    "allUsers": "全部使用者",
+    "apply": "查詢",
+    "reset": "重置"
   },
   "detail": {
     "title": "請求詳情",

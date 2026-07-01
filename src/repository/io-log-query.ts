@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, lt, or } from "drizzle-orm";
+import { and, desc, eq, gte, lt, lte, or } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { requestIoLog } from "@/drizzle/io-log-schema";
 import { messageRequest } from "@/drizzle/schema";
@@ -29,6 +29,9 @@ const MAX_PAGE_SIZE = 200;
 export async function listIoLogs(params: {
   limit?: number | null;
   cursor?: { createdAt: string; id: number } | null;
+  userName?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
 }): Promise<IoLogListResult> {
   const limit = Math.min(params.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
 
@@ -41,6 +44,13 @@ export async function listIoLogs(params: {
         );
       })()
     : undefined;
+
+  const whereCondition = and(
+    cursorCondition,
+    params.userName ? eq(requestIoLog.userName, params.userName) : undefined,
+    params.startTime ? gte(requestIoLog.createdAt, new Date(params.startTime)) : undefined,
+    params.endTime ? lte(requestIoLog.createdAt, new Date(params.endTime)) : undefined
+  );
 
   const rows = await db
     .select({
@@ -57,7 +67,7 @@ export async function listIoLogs(params: {
     })
     .from(requestIoLog)
     .leftJoin(messageRequest, eq(requestIoLog.requestId, messageRequest.id))
-    .where(cursorCondition)
+    .where(whereCondition)
     .orderBy(desc(requestIoLog.createdAt), desc(requestIoLog.id))
     .limit(limit + 1);
 

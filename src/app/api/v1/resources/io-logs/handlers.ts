@@ -29,7 +29,13 @@ export async function ioLogsHandler(c: Context): Promise<Response> {
     cursor = { createdAt: decoded.createdAt, id: decoded.id };
   }
 
-  const result = await listIoLogs({ limit, cursor });
+  const result = await listIoLogs({
+    limit,
+    cursor,
+    userName: c.req.query("userName") || null,
+    startTime: c.req.query("startTime") || null,
+    endTime: c.req.query("endTime") || null,
+  });
 
   return jsonResponse({
     items: result.items.map((row) => ({
