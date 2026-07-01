@@ -60,7 +60,7 @@ function parseSemverLike(
  * @param latest 最新版本 (如 "v1.3.0")
  * @returns 1: latest > current, 0: 相等, -1: current > latest
  *
- * ⚠️ 注意：返回值语义与常见的比较函数相反！
+ * ! 注意：返回值语义与常见的比较函数相反！
  * - 返回 1 表示 latest 更新（current 需要升级）
  * - 返回 -1 表示 current 更新（current 是较新版本）
  *
