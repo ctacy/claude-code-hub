@@ -191,10 +191,13 @@ export function fireAndForgetIoLog(
   if (session.headers.get("x-no-log")) return;
 
   const rawMessage = session.request.message as Record<string, unknown> | null;
-
-  // Method B: skip if any part of the request body contains the [no-log] marker
-  if (rawMessage && JSON.stringify(rawMessage).includes("[no-log]")) return;
   const rawUserMessage = rawMessage ? extractLastUserMessage(rawMessage) : null;
+
+  // Method B: skip if the user's current input contains the [no-log] marker
+  // Intentionally scoped to extracted user text only — not the full request body —
+  // to avoid false positives from history messages or system prompts.
+  if (rawUserMessage?.includes("[no-log]")) return;
+
   // Strip injected XML tag blocks (e.g. <system-reminder>…</system-reminder>) before storage
   const userMessage = rawUserMessage ? stripXmlTagBlocks(rawUserMessage) : null;
   const assistantText = extractAssistantText(responseText);
