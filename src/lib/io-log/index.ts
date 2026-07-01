@@ -171,7 +171,13 @@ export function fireAndForgetIoLog(
 ): void {
   if (!getEnvConfig().ENABLE_IO_BODY_LOGGING) return;
 
+  // Method A: skip if request carries X-No-Log header (any truthy value)
+  if (session.headers.get("x-no-log")) return;
+
   const rawMessage = session.request.message as Record<string, unknown> | null;
+
+  // Method B: skip if any part of the request body contains the [no-log] marker
+  if (rawMessage && JSON.stringify(rawMessage).includes("[no-log]")) return;
   const userMessage = rawMessage ? extractLastUserMessage(rawMessage) : null;
   const assistantText = extractAssistantText(responseText);
 
