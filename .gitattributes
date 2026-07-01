@@ -1,0 +1,16 @@
+# Force LF for all text files in the repo so biome format:check (which runs on
+# Linux CI, LF) never disagrees with CRLF blobs accidentally committed from
+# Windows working trees or the release bot. Prevents recurring "Formatter would
+# have printed" CI failures on package.json / *.ts / *.json.
+* text=auto eol=lf
+
+# Binary files: leave untouched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.pdf binary
