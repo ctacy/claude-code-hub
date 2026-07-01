@@ -152,80 +152,81 @@ export function IoLogsView() {
 
   return (
     <div className="space-y-4">
-      {/* Filters: 用户名 + 时间范围 */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="io-logs-filter-user" className="text-xs text-muted-foreground">
-            {t("columns.user")}
-          </label>
-          <Select
-            value={userNameInput || "__all__"}
-            onValueChange={(v) => setUserNameInput(v === "__all__" ? "" : v)}
-          >
-            <SelectTrigger id="io-logs-filter-user" className="h-8 w-40">
-              <SelectValue placeholder={t("filters.allUsers")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">{t("filters.allUsers")}</SelectItem>
-              {userOptions.map((name) => (
-                <SelectItem key={name} value={name}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Toolbar: 筛选条件 + 手动刷新 + 5s 自动刷新（同一行） */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="io-logs-filter-user" className="text-xs text-muted-foreground">
+              {t("columns.user")}
+            </label>
+            <Select
+              value={userNameInput || "__all__"}
+              onValueChange={(v) => setUserNameInput(v === "__all__" ? "" : v)}
+            >
+              <SelectTrigger id="io-logs-filter-user" className="h-8 w-40">
+                <SelectValue placeholder={t("filters.allUsers")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">{t("filters.allUsers")}</SelectItem>
+                {userOptions.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="io-logs-filter-start" className="text-xs text-muted-foreground">
+              {t("filters.startTime")}
+            </label>
+            <Input
+              id="io-logs-filter-start"
+              type="datetime-local"
+              value={startTimeInput}
+              onChange={(e) => setStartTimeInput(e.target.value)}
+              className="h-8 w-52"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="io-logs-filter-end" className="text-xs text-muted-foreground">
+              {t("filters.endTime")}
+            </label>
+            <Input
+              id="io-logs-filter-end"
+              type="datetime-local"
+              value={endTimeInput}
+              onChange={(e) => setEndTimeInput(e.target.value)}
+              className="h-8 w-52"
+            />
+          </div>
+          <Button variant="default" size="sm" onClick={applyFilters}>
+            {t("filters.apply")}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={resetFilters}>
+            {t("filters.reset")}
+          </Button>
         </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="io-logs-filter-start" className="text-xs text-muted-foreground">
-            {t("filters.startTime")}
-          </label>
-          <Input
-            id="io-logs-filter-start"
-            type="datetime-local"
-            value={startTimeInput}
-            onChange={(e) => setStartTimeInput(e.target.value)}
-            className="h-8 w-52"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="io-logs-filter-end" className="text-xs text-muted-foreground">
-            {t("filters.endTime")}
-          </label>
-          <Input
-            id="io-logs-filter-end"
-            type="datetime-local"
-            value={endTimeInput}
-            onChange={(e) => setEndTimeInput(e.target.value)}
-            className="h-8 w-52"
-          />
-        </div>
-        <Button variant="default" size="sm" onClick={applyFilters}>
-          {t("filters.apply")}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={resetFilters}>
-          {t("filters.reset")}
-        </Button>
-      </div>
 
-      {/* Toolbar: 手动刷新 + 5s 自动刷新 */}
-      <div className="flex items-center justify-end gap-4">
-        <div className="flex items-center gap-2">
-          <Switch
-            id="io-logs-auto-refresh"
-            checked={autoRefresh}
-            onCheckedChange={setAutoRefresh}
-          />
-          <label
-            htmlFor="io-logs-auto-refresh"
-            className="text-sm text-muted-foreground cursor-pointer select-none"
-          >
-            {t("autoRefresh")}
-          </label>
+        <div className="ml-auto flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="io-logs-auto-refresh"
+              checked={autoRefresh}
+              onCheckedChange={setAutoRefresh}
+            />
+            <label
+              htmlFor="io-logs-auto-refresh"
+              className="text-sm text-muted-foreground cursor-pointer select-none"
+            >
+              {t("autoRefresh")}
+            </label>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isRefetching}>
+            <RefreshCw className={cn("h-4 w-4 mr-1.5", isRefetching && "animate-spin")} />
+            {t("refresh")}
+          </Button>
         </div>
-        <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isRefetching}>
-          <RefreshCw className={cn("h-4 w-4 mr-1.5", isRefetching && "animate-spin")} />
-          {t("refresh")}
-        </Button>
       </div>
 
       <div className="rounded-md border">
@@ -234,8 +235,8 @@ export function IoLogsView() {
           <div className="flex items-center h-9 text-xs font-medium text-muted-foreground/80 tracking-wide">
             <div className="flex-[0.9] min-w-[150px] pl-3 truncate">{t("columns.time")}</div>
             <div className="flex-[0.7] min-w-[60px] px-1.5 truncate">{t("columns.requestId")}</div>
-            <div className="flex-[0.8] min-w-[80px] px-1.5 truncate">{t("columns.user")}</div>
-            <div className="flex-[0.8] min-w-[80px] px-1.5 truncate">{t("columns.token")}</div>
+            <div className="flex-[0.5] min-w-[60px] px-1.5 truncate">{t("columns.user")}</div>
+            <div className="flex-[0.5] min-w-[60px] px-1.5 truncate">{t("columns.token")}</div>
             <div className="flex-[1.0] min-w-[120px] px-1.5 truncate">{t("columns.model")}</div>
             <div className="flex-[0.5] min-w-[60px] px-1.5 truncate">{t("columns.status")}</div>
             <div className="flex-[2.5] min-w-[200px] px-1.5 pr-3 truncate">
@@ -310,13 +311,13 @@ export function IoLogsView() {
                       #{log.requestId}
                     </div>
                     <div
-                      className="flex-[0.8] min-w-[80px] px-1.5 text-xs truncate"
+                      className="flex-[0.5] min-w-[60px] px-1.5 text-xs truncate"
                       title={log.userName ?? ""}
                     >
                       {log.userName ?? <span className="text-muted-foreground">—</span>}
                     </div>
                     <div
-                      className="flex-[0.8] min-w-[80px] px-1.5 text-xs truncate text-muted-foreground"
+                      className="flex-[0.5] min-w-[60px] px-1.5 text-xs truncate text-muted-foreground"
                       title={log.keyName ?? ""}
                     >
                       {log.keyName ?? "—"}

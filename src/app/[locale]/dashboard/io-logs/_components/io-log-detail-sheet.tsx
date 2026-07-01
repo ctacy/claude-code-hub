@@ -1,9 +1,7 @@
 "use client";
 
-import { X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { IoLogItem } from "@/lib/api-client/v1/actions/io-logs";
 import { formatDate } from "@/lib/utils/date-format";
@@ -44,14 +42,6 @@ export function IoLogDetailSheet({ log, open, onOpenChange }: IoLogDetailSheetPr
       >
         <SheetHeader className="flex flex-row items-center justify-between border-b px-4 py-3 shrink-0">
           <SheetTitle className="text-base font-semibold">{t("detail.title")}</SheetTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </SheetHeader>
 
         {log && (
