@@ -58,6 +58,14 @@ export function IoLogDetailSheet({ log, open, onOpenChange }: IoLogDetailSheetPr
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-2.5 text-sm">
               <span className="font-mono text-xs text-muted-foreground">#{log.requestId}</span>
+              {log.userName && (
+                <span className="text-xs text-foreground font-medium">{log.userName}</span>
+              )}
+              {log.keyName && (
+                <Badge variant="outline" className="text-[10px]">
+                  {log.keyName}
+                </Badge>
+              )}
               {(log.originalModel ?? log.model) && (
                 <Badge variant="secondary" className="text-[10px]">
                   {log.originalModel ?? log.model}

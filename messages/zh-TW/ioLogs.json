@@ -8,6 +8,8 @@
   "columns": {
     "time": "時間",
     "requestId": "請求 ID",
+    "user": "使用者",
+    "token": "Token",
     "model": "模型",
     "status": "狀態",
     "requestPreview": "請求預覽"

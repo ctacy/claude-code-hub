@@ -8,6 +8,8 @@
   "columns": {
     "time": "Time",
     "requestId": "Req ID",
+    "user": "User",
+    "token": "Token",
     "model": "Model",
     "status": "Status",
     "requestPreview": "Request Preview"

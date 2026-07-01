@@ -12,6 +12,8 @@ export async function insertRequestIoLog(params: {
   requestId: number;
   requestBody: string | null;
   responseBody: string | null;
+  userName?: string | null;
+  keyName?: string | null;
 }): Promise<void> {
   const truncated =
     params.responseBody && params.responseBody.length > IO_LOG_MAX_RESPONSE_BYTES
@@ -22,5 +24,7 @@ export async function insertRequestIoLog(params: {
     requestId: params.requestId,
     requestBody: params.requestBody ?? null,
     responseBody: truncated ?? null,
+    userName: params.userName ?? null,
+    keyName: params.keyName ?? null,
   });
 }

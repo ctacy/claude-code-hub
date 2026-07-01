@@ -8,6 +8,8 @@
   "columns": {
     "time": "Время",
     "requestId": "ID запроса",
+    "user": "Пользователь",
+    "token": "Токен",
     "model": "Модель",
     "status": "Статус",
     "requestPreview": "Превью запроса"

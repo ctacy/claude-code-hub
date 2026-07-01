@@ -25,6 +25,8 @@ const IoLogItemSchema = z.object({
   model: z.string().nullable(),
   originalModel: z.string().nullable(),
   statusCode: z.number().nullable(),
+  userName: z.string().nullable(),
+  keyName: z.string().nullable(),
 });
 
 const IoLogListResponseSchema = z.object({

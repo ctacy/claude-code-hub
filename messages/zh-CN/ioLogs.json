@@ -8,6 +8,8 @@
   "columns": {
     "time": "时间",
     "requestId": "请求 ID",
+    "user": "用户",
+    "token": "Token",
     "model": "模型",
     "status": "状态",
     "requestPreview": "请求预览"

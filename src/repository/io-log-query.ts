@@ -14,6 +14,8 @@ export type IoLogRow = {
   model: string | null;
   originalModel: string | null;
   statusCode: number | null;
+  userName: string | null;
+  keyName: string | null;
 };
 
 export type IoLogListResult = {
@@ -50,6 +52,8 @@ export async function listIoLogs(params: {
       model: messageRequest.model,
       originalModel: messageRequest.originalModel,
       statusCode: messageRequest.statusCode,
+      userName: requestIoLog.userName,
+      keyName: requestIoLog.keyName,
     })
     .from(requestIoLog)
     .leftJoin(messageRequest, eq(requestIoLog.requestId, messageRequest.id))

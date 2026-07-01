@@ -121,6 +121,8 @@ export function IoLogsView() {
           <div className="flex items-center h-9 text-xs font-medium text-muted-foreground/80 tracking-wide">
             <div className="flex-[0.9] min-w-[120px] pl-3 truncate">{t("columns.time")}</div>
             <div className="flex-[0.7] min-w-[60px] px-1.5 truncate">{t("columns.requestId")}</div>
+            <div className="flex-[0.8] min-w-[80px] px-1.5 truncate">{t("columns.user")}</div>
+            <div className="flex-[0.8] min-w-[80px] px-1.5 truncate">{t("columns.token")}</div>
             <div className="flex-[1.0] min-w-[120px] px-1.5 truncate">{t("columns.model")}</div>
             <div className="flex-[0.5] min-w-[60px] px-1.5 truncate">{t("columns.status")}</div>
             <div className="flex-[2.5] min-w-[200px] px-1.5 pr-3 truncate">
@@ -193,6 +195,12 @@ export function IoLogsView() {
                     </div>
                     <div className="flex-[0.7] min-w-[60px] px-1.5 font-mono text-xs truncate text-muted-foreground">
                       #{log.requestId}
+                    </div>
+                    <div className="flex-[0.8] min-w-[80px] px-1.5 text-xs truncate" title={log.userName ?? ""}>
+                      {log.userName ?? <span className="text-muted-foreground">—</span>}
+                    </div>
+                    <div className="flex-[0.8] min-w-[80px] px-1.5 text-xs truncate text-muted-foreground" title={log.keyName ?? ""}>
+                      {log.keyName ?? "—"}
                     </div>
                     <div
                       className="flex-[1.0] min-w-[120px] px-1.5 truncate"

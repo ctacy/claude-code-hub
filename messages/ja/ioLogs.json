@@ -8,6 +8,8 @@
   "columns": {
     "time": "時刻",
     "requestId": "リクエスト ID",
+    "user": "ユーザー",
+    "token": "トークン",
     "model": "モデル",
     "status": "ステータス",
     "requestPreview": "リクエストプレビュー"
