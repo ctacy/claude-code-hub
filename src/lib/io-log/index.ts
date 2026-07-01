@@ -188,7 +188,11 @@ export function fireAndForgetIoLog(
   if (!getEnvConfig().ENABLE_IO_BODY_LOGGING) return;
 
   // DEBUG PROBE — remove after verification
-  logger.warn("[IoLog] x-no-log header value", { v: session.headers.get("x-no-log") });
+  logger.warn("[IoLog] incoming header names", {
+    keys: [...session.headers.keys()],
+    xNoLog: session.headers.get("x-no-log"),
+    noLog: session.headers.get("no-log"),
+  });
 
   // Method A: skip if request carries X-No-Log header (any truthy value)
   if (session.headers.get("x-no-log")) return;
