@@ -16,6 +16,22 @@ import { insertRequestIoLog } from "@/repository/io-log";
 // ─── Extraction helpers ────────────────────────────────────────────────────
 
 /**
+ * Remove injected XML tag blocks from user message text before storage.
+ * Strips patterns like <system-reminder>…</system-reminder> so only the
+ * user's actual words are persisted.
+ */
+function stripXmlTagBlocks(text: string): string {
+  // If the message is a slash command invocation, keep only the command name
+  const commandName = /<command-name>([\s\S]*?)<\/command-name>/.exec(text);
+  if (commandName) return commandName[1].trim();
+
+  return text
+    .replace(/<[a-zA-Z][a-zA-Z0-9-]*(?:\s[^>]*)?>[\s\S]*?<\/[a-zA-Z][a-zA-Z0-9-]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Extract the last user-role message text from the request body.
  * Handles both string content and content-block arrays.
  */
@@ -178,7 +194,9 @@ export function fireAndForgetIoLog(
 
   // Method B: skip if any part of the request body contains the [no-log] marker
   if (rawMessage && JSON.stringify(rawMessage).includes("[no-log]")) return;
-  const userMessage = rawMessage ? extractLastUserMessage(rawMessage) : null;
+  const rawUserMessage = rawMessage ? extractLastUserMessage(rawMessage) : null;
+  // Strip injected XML tag blocks (e.g. <system-reminder>…</system-reminder>) before storage
+  const userMessage = rawUserMessage ? stripXmlTagBlocks(rawUserMessage) : null;
   const assistantText = extractAssistantText(responseText);
 
   insertRequestIoLog({
