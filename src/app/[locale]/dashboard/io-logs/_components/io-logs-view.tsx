@@ -222,7 +222,12 @@ export function IoLogsView() {
               {t("autoRefresh")}
             </label>
           </div>
-          <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isRefetching}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refetch()}
+            disabled={isRefetching}
+          >
             <RefreshCw className={cn("h-4 w-4 mr-1.5", isRefetching && "animate-spin")} />
             {t("refresh")}
           </Button>
