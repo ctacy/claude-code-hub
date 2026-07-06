@@ -35469,6 +35469,8 @@ export interface operations {
                 providerId?: number | null;
                 /** @description Model filter. */
                 model?: string;
+                /** @description Only include records whose requested model differs from the actual response model. */
+                actualResponseModelMismatch?: "true" | "false" | boolean;
                 /** @description HTTP status code filter. */
                 statusCode?: number | null;
                 /** @description Exclude successful responses. */
@@ -35672,6 +35674,8 @@ export interface operations {
                 providerId?: number | null;
                 /** @description Model filter. */
                 model?: string;
+                /** @description Only include records whose requested model differs from the actual response model. */
+                actualResponseModelMismatch?: "true" | "false" | boolean;
                 /** @description HTTP status code filter. */
                 statusCode?: number | null;
                 /** @description Exclude successful responses. */
@@ -36740,6 +36744,8 @@ export interface operations {
                     providerId?: number | null;
                     /** @description Model filter. */
                     model?: string;
+                    /** @description Only include records whose requested model differs from the actual response model. */
+                    actualResponseModelMismatch?: "true" | "false" | boolean;
                     /** @description HTTP status code filter. */
                     statusCode?: number | null;
                     /** @description Exclude successful responses. */
@@ -37816,6 +37822,8 @@ export interface operations {
                 sessionId?: string;
                 /** @description Model filter. */
                 model?: string;
+                /** @description Only include records whose requested model differs from the actual response model. */
+                actualResponseModelMismatch?: "true" | "false" | boolean;
                 /** @description HTTP status code filter. */
                 statusCode?: number | null;
                 /** @description Exclude successful responses. */
@@ -38017,6 +38025,8 @@ export interface operations {
                 sessionId?: string;
                 /** @description Model filter. */
                 model?: string;
+                /** @description Only include records whose requested model differs from the actual response model. */
+                actualResponseModelMismatch?: "true" | "false" | boolean;
                 /** @description HTTP status code filter. */
                 statusCode?: number | null;
                 /** @description Exclude successful responses. */
