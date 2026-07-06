@@ -201,7 +201,6 @@ jobs:
       ADMIN_TOKEN: test-admin-token-for-ci
       AUTO_MIGRATE: true
       PORT: 13500
-      NODE_ENV: production
       ENABLE_RATE_LIMIT: true
       AUTH_SESSION_TTL_SECONDS: 604800
       SESSION_TTL: 300
@@ -247,6 +246,8 @@ jobs:
         run: bun run build
 
       - name: Start server (background)
+        env:
+          NODE_ENV: production
         run: |
           bun run start &
           echo $! > server.pid
