@@ -8,11 +8,11 @@
 
 **🚀 Intelligent AI API relay platform — the control center for multi-provider onboarding, elastic routing, and granular operations**
 
-[![Container Image](https://img.shields.io/badge/ghcr.io-ding113%2Fclaude--code--hub-181717?logo=github)](https://github.com/ding113/claude-code-hub/pkgs/container/claude-code-hub)
-[![License](https://img.shields.io/github/license/ding113/claude-code-hub)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/ding113/claude-code-hub)](https://github.com/ding113/claude-code-hub/stargazers)
+[![Container Image](https://img.shields.io/badge/ghcr.io-ctacy%2Fclaude--code--hub-181717?logo=github)](https://github.com/ctacy/claude-code-hub/pkgs/container/claude-code-hub)
+[![License](https://img.shields.io/github/license/ctacy/claude-code-hub)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/ctacy/claude-code-hub)](https://github.com/ctacy/claude-code-hub/stargazers)
 [![Telegram Group](https://img.shields.io/badge/Telegram-Join%20Group-blue?logo=telegram)](https://t.me/ygxz_group)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ding113/claude-code-hub)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ctacy/claude-code-hub)
 
 Claude Code Hub combines Next.js 15, Hono, PostgreSQL, and Redis to deliver a Claude/OpenAI-compatible API gateway with smart load balancing, live observability, price governance, and automated documentation, enabling teams to manage multiple AI vendors safely and transparently.
 
@@ -26,20 +26,6 @@ Claude Code Hub combines Next.js 15, Hono, PostgreSQL, and Redis to deliver a Cl
 > **This project is currently under active refactoring**
 >
 > Claude Code Hub Plus, the refactored version of Claude Code Hub, is expected to be open-sourced under the AGPL license in Q3. Claude Code Hub Plus is dedicated to building a high-performance, stable, commercial-grade LLM gateway, offering comprehensive commercial features such as format conversion, privacy filtering, a model marketplace, and top-up billing, while significantly improving the theoretical performance of the forwarding core. During development of the refactored version, progress and community support for the Node.js version may be delayed — thank you for your understanding.
-
-<table>
-<tr>
-<td width="200">
-<a href="https://cubence.com/signup?code=SCE7Y3QR&source=cch">
-<img src="public/readme/cubence.jpg" alt="Cubence Logo" width="180"/>
-</a>
-</td>
-<td>
-<b>💎 Special Offer</b>: <a href="https://cubence.com/signup?code=SCE7Y3QR&source=cch">Cubence</a> is a stable and efficient AI service transit platform, providing transit services for AI tools such as Claude Code, Codex, Gemini, with good stability and cost-effectiveness.<br/>
-Cubence offers special discount coupons for users of CCH: when purchasing with the coupon <code>DING113CCH</code>, you can enjoy a <b>10% discount</b> → <a href="https://cubence.com/signup?code=SCE7Y3QR&source=cch">Visit Now</a>
-</td>
-</tr>
-</table>
 
 <table>
 <tr>
@@ -83,21 +69,6 @@ AIGoCode offers a special bonus for CCH users — register via this link and rec
 </tr>
 </table>
 
-<table>
-<tr>
-<td width="200">
-<a href="https://pateway.ai/?ch=1ycdoum&aff=T8FV5H42">
-<img src="public/readme/pateway.png" alt="PatewayAI Logo" width="180"/>
-</a>
-</td>
-<td>
-<b>💎 Special Offer</b>: <a href="https://pateway.ai/?ch=1ycdoum&aff=T8FV5H42">PatewayAI</a> is a premium model API relay provider built for power AI developers, focused on official direct access. It offers the full Claude lineup and Codex series with 100% official upstream channels, no mixed routes, and no watered-down quality. Billing is transparent and every token-level charge can be verified line by line.<br/>
-It also supports enterprise-grade high concurrency and provides a professional management platform for business customers. Enterprise clients can sign formal contracts and request invoices; visit the official website for contact details and more information.<br/>
-Register now via <a href="https://pateway.ai/?ch=1ycdoum&aff=T8FV5H42">this link</a> to get a <b>$3 trial credit</b>. Top-ups can be as low as <b>60% of list price</b>, with two-way referral bonuses, and total referral rewards up to <b>$150</b>.
-</td>
-</tr>
-</table>
-
 ## ✨ Core Highlights
 
 - 🤖 **Intelligent load balancing**: Weight + priority + grouping scheduler with built-in circuit breaker and up to three failover retries to keep requests stable.
@@ -130,7 +101,7 @@ The one-click deployment script **automatically handles** all of the following:
 
 ```bash
 # Download and run the deployment script
-curl -fsSL https://raw.githubusercontent.com/ding113/claude-code-hub/main/scripts/deploy.sh -o deploy.sh
+curl -fsSL https://raw.githubusercontent.com/ctacy/claude-code-hub/main/scripts/deploy.sh -o deploy.sh
 chmod +x deploy.sh
 ./deploy.sh
 ```
@@ -138,7 +109,7 @@ chmod +x deploy.sh
 Or using wget:
 
 ```bash
-wget https://raw.githubusercontent.com/ding113/claude-code-hub/main/scripts/deploy.sh
+wget https://raw.githubusercontent.com/ctacy/claude-code-hub/main/scripts/deploy.sh
 chmod +x deploy.sh
 ./deploy.sh
 ```
@@ -147,7 +118,7 @@ chmod +x deploy.sh
 
 ```powershell
 # Download and run the deployment script
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ding113/claude-code-hub/main/scripts/deploy.ps1" -OutFile "deploy.ps1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/ctacy/claude-code-hub/main/scripts/deploy.ps1" -OutFile "deploy.ps1"
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 .\deploy.ps1
 ```
@@ -175,7 +146,7 @@ The script will prompt you to select a deployment branch:
 1. **Clone and configure**
 
    ```bash
-   git clone https://github.com/ding113/claude-code-hub.git
+   git clone https://github.com/ctacy/claude-code-hub.git
    cd claude-code-hub
    cp .env.example .env
    ```
@@ -283,7 +254,7 @@ The repo ships a **dual-compatible** (k3s + standard Kubernetes) one-click deplo
 Quick start (auto-installs k3s if no cluster is detected):
 
 ```bash
-git clone https://github.com/ding113/claude-code-hub.git
+git clone https://github.com/ctacy/claude-code-hub.git
 cd claude-code-hub
 bash scripts/deploy-k8s.sh --install-k3s -y
 ```
@@ -387,7 +358,7 @@ This project builds on [zsio/claude-code-hub](https://github.com/zsio/claude-cod
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ding113/claude-code-hub&type=Date)](https://star-history.com/#ding113/claude-code-hub&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=ctacy/claude-code-hub&type=Date)](https://star-history.com/#ctacy/claude-code-hub&Date)
 
 ## 📜 License
 
