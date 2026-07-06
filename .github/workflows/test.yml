@@ -201,6 +201,7 @@ jobs:
       ADMIN_TOKEN: test-admin-token-for-ci
       AUTO_MIGRATE: true
       PORT: 13500
+      NODE_ENV: production
       ENABLE_RATE_LIMIT: true
       AUTH_SESSION_TTL_SECONDS: 604800
       SESSION_TTL: 300
