@@ -107,13 +107,54 @@ function extractAssistantText(responseText: string): string {
         // ignore malformed SSE lines
       }
     }
-    if (thinkingParts.length > 0 || textParts.length > 0) {
+    // Collect tool_use blocks: name + assembled partial_json
+    const toolCalls: Array<{ name: string; json: string }> = [];
+    let currentTool: { index: number; name: string; parts: string[] } | null = null;
+
+    for (const line of responseText.split("\n")) {
+      if (!line.startsWith("data: ")) continue;
+      try {
+        const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
+        if (data.type === "content_block_start") {
+          const block = data.content_block as Record<string, unknown> | undefined;
+          if (block?.type === "tool_use" && typeof block.name === "string") {
+            currentTool = { index: data.index as number, name: block.name, parts: [] };
+          }
+        } else if (
+          data.type === "content_block_delta" &&
+          typeof data.delta === "object" &&
+          data.delta !== null
+        ) {
+          const delta = data.delta as Record<string, unknown>;
+          if (delta.type === "input_json_delta" && typeof delta.partial_json === "string") {
+            if (currentTool && currentTool.index === (data.index as number)) {
+              currentTool.parts.push(delta.partial_json);
+            }
+          }
+        } else if (data.type === "content_block_stop" && currentTool) {
+          toolCalls.push({ name: currentTool.name, json: currentTool.parts.join("") });
+          currentTool = null;
+        }
+      } catch {
+        // ignore malformed lines
+      }
+    }
+
+    if (thinkingParts.length > 0 || textParts.length > 0 || toolCalls.length > 0) {
       const parts: string[] = [];
       if (thinkingParts.length > 0) {
         parts.push(`[thinking]\n${thinkingParts.join("")}\n[/thinking]`);
       }
       if (textParts.length > 0) {
         parts.push(textParts.join(""));
+      }
+      for (const tool of toolCalls) {
+        try {
+          const pretty = JSON.stringify(JSON.parse(tool.json), null, 2);
+          parts.push(`[tool_use: ${tool.name}]\n${pretty}`);
+        } catch {
+          parts.push(`[tool_use: ${tool.name}]\n${tool.json}`);
+        }
       }
       return parts.join("\n\n");
     }
