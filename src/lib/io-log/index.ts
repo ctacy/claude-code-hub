@@ -82,9 +82,11 @@ function extractLastUserMessage(message: Record<string, unknown>): string | null
  * Falls back to the raw string if neither parses.
  */
 function extractAssistantText(responseText: string): string {
-  // SSE path: look for content_block_delta / text_delta events
+  // SSE path: collect text_delta and thinking_delta separately, then format
+  // Output: "[thinking]\n{thinking}\n[/thinking]\n\n{text}" when thinking present
   if (responseText.includes("content_block_delta")) {
-    const texts: string[] = [];
+    const thinkingParts: string[] = [];
+    const textParts: string[] = [];
     for (const line of responseText.split("\n")) {
       if (!line.startsWith("data: ")) continue;
       try {
@@ -92,17 +94,29 @@ function extractAssistantText(responseText: string): string {
         if (
           data.type === "content_block_delta" &&
           typeof data.delta === "object" &&
-          data.delta !== null &&
-          (data.delta as Record<string, unknown>).type === "text_delta"
+          data.delta !== null
         ) {
-          const t = (data.delta as Record<string, unknown>).text;
-          if (typeof t === "string") texts.push(t);
+          const delta = data.delta as Record<string, unknown>;
+          if (delta.type === "text_delta" && typeof delta.text === "string") {
+            textParts.push(delta.text);
+          } else if (delta.type === "thinking_delta" && typeof delta.thinking === "string") {
+            thinkingParts.push(delta.thinking);
+          }
         }
       } catch {
         // ignore malformed SSE lines
       }
     }
-    if (texts.length > 0) return texts.join("");
+    if (thinkingParts.length > 0 || textParts.length > 0) {
+      const parts: string[] = [];
+      if (thinkingParts.length > 0) {
+        parts.push(`[thinking]\n${thinkingParts.join("")}\n[/thinking]`);
+      }
+      if (textParts.length > 0) {
+        parts.push(textParts.join(""));
+      }
+      return parts.join("\n\n");
+    }
   }
 
   // Responses API SSE path (Codex / gpt-5.x): response.output_text.delta
