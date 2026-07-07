@@ -22,53 +22,6 @@ Claude Code Hub combines Next.js 15, Hono, PostgreSQL, and Redis to deliver a Cl
 
 ---
 
-> [!IMPORTANT]
-> **This project is currently under active refactoring**
->
-> Claude Code Hub Plus, the refactored version of Claude Code Hub, is expected to be open-sourced under the AGPL license in Q3. Claude Code Hub Plus is dedicated to building a high-performance, stable, commercial-grade LLM gateway, offering comprehensive commercial features such as format conversion, privacy filtering, a model marketplace, and top-up billing, while significantly improving the theoretical performance of the forwarding core. During development of the refactored version, progress and community support for the Node.js version may be delayed — thank you for your understanding.
-
-<table>
-<tr>
-<td width="200">
-<a href="https://www.packyapi.com/register?aff=withcch">
-<img src="public/readme/packycode.png" alt="PackyCode Logo" width="180"/>
-</a>
-</td>
-<td>
-<b>💎 Special Offer</b>: Thanks to <a href="https://www.packyapi.com/register?aff=withcch">PackyCode</a> for sponsoring this project! PackyCode is a stable and efficient API relay service provider, offering relay services for Claude Code, Codex, Gemini and more.<br/>
-PackyCode offers a special discount for users of this software. Register via this link and enter code <code>WITHCCH</code> when recharging to enjoy <b>10% off</b> → <a href="https://www.packyapi.com/register?aff=withcch">Visit Now</a>
-</td>
-</tr>
-</table>
-
-<table>
-<tr>
-<td width="200">
-<a href="https://co.yes.vg/register?ref=ygxz">
-<img src="public/readme/yescode.png" alt="YesCode Logo" width="180"/>
-</a>
-</td>
-<td>
-<b>💎 Special Offer</b>: <a href="https://co.yes.vg/register?ref=ygxz">YesCode</a> is a low-profile yet highly reliable AI API relay service, dedicated to providing developers with stable access to Claude, Codex, Gemini, and other models. Built on solid technical foundations with consistently dependable service quality.<br/>
-Register via this link to get started → <a href="https://co.yes.vg/register?ref=ygxz">Visit Now</a>
-</td>
-</tr>
-</table>
-
-<table>
-<tr>
-<td width="200">
-<a href="https://aigocode.com/invite/QDNEJJAH">
-<img src="public/readme/aigocode.jpg" alt="AIGoCode Logo" width="180"/>
-</a>
-</td>
-<td>
-<b>💎 Special Offer</b>: <a href="https://aigocode.com/invite/QDNEJJAH">AIGoCode</a> is an all-in-one platform integrating the latest models from Claude Code, Codex, and Gemini, delivering stable, efficient, and cost-effective AI coding services. Flexible subscription plans (monthly or bundled), zero ban risk, direct access from China, massive credit pools, and lightning-fast responses.<br/>
-AIGoCode offers a special bonus for CCH users — register via this link and receive an extra <b>10% bonus credit</b> on your first top-up → <a href="https://aigocode.com/invite/QDNEJJAH">Visit Now</a>
-</td>
-</tr>
-</table>
-
 ## ✨ Core Highlights
 
 - 🤖 **Intelligent load balancing**: Weight + priority + grouping scheduler with built-in circuit breaker and up to three failover retries to keep requests stable.
@@ -354,11 +307,11 @@ We welcome issues and PRs! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for th
 
 ## 🌐 Acknowledgments
 
-This project builds on [zsio/claude-code-hub](https://github.com/zsio/claude-code-hub), references [router-for-me/CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) for the OpenAI-compatible layer, and [prehisle/relay-pulse](https://github.com/prehisle/relay-pulse) for provider detection functionality. Huge thanks to the original authors and community contributors!
+This project is based on [ding113/claude-code-hub](https://github.com/ding113/claude-code-hub), with added support for request log recording and viewing. It also references [router-for-me/CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) for the OpenAI-compatible layer, and [prehisle/relay-pulse](https://github.com/prehisle/relay-pulse) for provider detection functionality. Huge thanks to the original authors and community contributors!
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ctacy/claude-code-hub&type=Date)](https://star-history.com/#ctacy/claude-code-hub&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=ctacy/claude-code-hub&type=date)](https://star-history.com/#ctacy/claude-code-hub&date)
 
 ## 📜 License
 

@@ -22,53 +22,6 @@ Claude Code Hub 通过 Next.js 15 + Hono + PostgreSQL + Redis 组合，实现 Cl
 
 ---
 
-> [!IMPORTANT]
-> **当前项目正处于积极重构阶段**
->
-> Claude Code Hub 的重构版本 Claude Code Hub Plus 预计将于第三季度以 AGPL 形式开源。Claude Code Hub Plus 致力于打造高性能、稳定的商用级 LLM 网关，提供格式转换、隐私过滤、模型广场、充值计费等完善的商用功能，并显著提升转发核心的理论性能。重构版本开发期间，Node.js 版本的开发进度和社区支持可能延误，敬请理解。
-
-<table>
-<tr>
-<td width="200">
-<a href="https://www.packyapi.com/register?aff=withcch">
-<img src="public/readme/packycode.png" alt="PackyCode Logo" width="180"/>
-</a>
-</td>
-<td>
-<b>💎 特别优惠</b>：感谢 <a href="https://www.packyapi.com/register?aff=withcch">PackyCode</a> 赞助本项目！PackyCode 是一家稳定、高效的 API 中转服务商，提供 Claude Code、Codex、Gemini 等多种中转服务。<br/>
-PackyCode 为本软件的用户提供了特别优惠，使用此链接注册并在充值时填写优惠码 <code>WITHCCH</code>，可享受 <b>9 折优惠</b> → <a href="https://www.packyapi.com/register?aff=withcch">立即访问</a>
-</td>
-</tr>
-</table>
-
-<table>
-<tr>
-<td width="200">
-<a href="https://co.yes.vg/register?ref=ygxz">
-<img src="public/readme/yescode.png" alt="YesCode Logo" width="180"/>
-</a>
-</td>
-<td>
-<b>💎 特别优惠</b>：<a href="https://co.yes.vg/register?ref=ygxz">YesCode</a> 是一家低调务实的 AI API 中转服务商，专注于为开发者提供稳定可靠的 Claude、Codex、Gemini 等模型接入服务，以扎实的技术底蕴和持续稳定的服务质量赢得用户信赖。<br/>
-通过此链接注册即可体验 → <a href="https://co.yes.vg/register?ref=ygxz">立即访问</a>
-</td>
-</tr>
-</table>
-
-<table>
-<tr>
-<td width="200">
-<a href="https://aigocode.com/invite/QDNEJJAH">
-<img src="public/readme/aigocode.jpg" alt="AIGoCode Logo" width="180"/>
-</a>
-</td>
-<td>
-<b>💎 特别优惠</b>：<a href="https://aigocode.com/invite/QDNEJJAH">AIGoCode</a> 是一个集成了 Claude Code、Codex 以及 Gemini 最新模型的一站式平台，为你提供稳定、高效且高性价比的 AI 编程服务。提供灵活的订阅计划，可包月可套餐，零封号风险，国内直连，无需魔法，超大积分池，极速响应。<br/>
-AIGoCode 为 CCH 的用户提供了特别福利，通过此链接注册的用户首次充值可以获得额外 <b>10% 奖励额度</b> → <a href="https://aigocode.com/invite/QDNEJJAH">立即访问</a>
-</td>
-</tr>
-</table>
-
 ## ✨ 核心功能 Highlights
 
 - 🤖 **智能负载均衡**：权重 + 优先级 + 分组调度，内置熔断保护与最多 3 次故障转移，保障请求稳定。
@@ -367,11 +320,11 @@ cch doctor            # 诊断集群与部署状态
 
 ## 🌐 致谢 Acknowledgments
 
-项目基于 [zsio/claude-code-hub](https://github.com/zsio/claude-code-hub) 深度改进，OpenAI 兼容层参考 [router-for-me/CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)，供应商检测功能参考 [prehisle/relay-pulse](https://github.com/prehisle/relay-pulse)。感谢原作者及社区贡献者！
+项目基于 [ding113/claude-code-hub](https://github.com/ding113/claude-code-hub) 改造，增加请求记录保存和查看功能。OpenAI 兼容层参考 [router-for-me/CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)，供应商检测功能参考 [prehisle/relay-pulse](https://github.com/prehisle/relay-pulse)。感谢原作者及社区贡献者！
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ctacy/claude-code-hub&type=Date)](https://star-history.com/#ctacy/claude-code-hub&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=ctacy/claude-code-hub&type=date)](https://star-history.com/#ctacy/claude-code-hub&date)
 
 ## 📜 许可证 License
 
