@@ -143,7 +143,7 @@ function extractAssistantText(responseText: string): string {
     if (thinkingParts.length > 0 || textParts.length > 0 || toolCalls.length > 0) {
       const parts: string[] = [];
       if (thinkingParts.length > 0) {
-        parts.push(`[thinking]\n${thinkingParts.join("")}\n[/thinking]`);
+        parts.push(`[thinking]\n${thinkingParts.join("").trim()}\n[/thinking]`);
       }
       if (textParts.length > 0) {
         parts.push(textParts.join(""));
