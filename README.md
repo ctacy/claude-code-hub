@@ -324,7 +324,13 @@ cch doctor            # 诊断集群与部署状态
 
 ## ⭐ Star History
 
-[查看 Star History →](https://star-history.com/#ctacy/claude-code-hub&date)
+<a href="https://www.star-history.com/?type=date&repos=ctacy%2Fclaude-code-hub">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=ctacy/claude-code-hub&type=date&theme=dark&legend=top-left&sealed_token=TO-Bo7KaeETV7KcWDEJjouzBfrVNEUpGeKDHNg7WOkcjQLqi8aO3a1yxBHvDDPTez9dulvtzJYi4sFGrR9gfbd_0_lccl8VJu_b4FC5tmK2rVFxQJubHrg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=ctacy/claude-code-hub&type=date&legend=top-left&sealed_token=TO-Bo7KaeETV7KcWDEJjouzBfrVNEUpGeKDHNg7WOkcjQLqi8aO3a1yxBHvDDPTez9dulvtzJYi4sFGrR9gfbd_0_lccl8VJu_b4FC5tmK2rVFxQJubHrg" />
+    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=ctacy/claude-code-hub&type=date&legend=top-left&sealed_token=TO-Bo7KaeETV7KcWDEJjouzBfrVNEUpGeKDHNg7WOkcjQLqi8aO3a1yxBHvDDPTez9dulvtzJYi4sFGrR9gfbd_0_lccl8VJu_b4FC5tmK2rVFxQJubHrg" />
+  </picture>
+</a>
 
 ## 📜 许可证 License
 
