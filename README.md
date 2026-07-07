@@ -324,7 +324,7 @@ cch doctor            # 诊断集群与部署状态
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ctacy/claude-code-hub&type=date)](https://star-history.com/#ctacy/claude-code-hub&date)
+[查看 Star History →](https://star-history.com/#ctacy/claude-code-hub&date)
 
 ## 📜 许可证 License
 

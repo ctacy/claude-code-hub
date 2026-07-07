@@ -311,7 +311,7 @@ This project is based on [ding113/claude-code-hub](https://github.com/ding113/cl
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ctacy/claude-code-hub&type=date)](https://star-history.com/#ctacy/claude-code-hub&date)
+[View Star History →](https://star-history.com/#ctacy/claude-code-hub&date)
 
 ## 📜 License
 
