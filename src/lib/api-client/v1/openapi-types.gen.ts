@@ -19368,6 +19368,7 @@ export interface operations {
                 userName?: string;
                 startTime?: string;
                 endTime?: string;
+                keyword?: string;
             };
             header?: never;
             path?: never;
