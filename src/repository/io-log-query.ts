@@ -47,13 +47,12 @@ export async function listIoLogs(params: {
       })()
     : undefined;
 
-  const keywordCondition =
-    params.keyword && params.keyword.trim()
-      ? or(
-          ilike(requestIoLog.requestBody, `%${params.keyword.trim()}%`),
-          ilike(requestIoLog.responseBody, `%${params.keyword.trim()}%`)
-        )
-      : undefined;
+  const keywordCondition = params.keyword?.trim()
+    ? or(
+        ilike(requestIoLog.requestBody, `%${params.keyword.trim()}%`),
+        ilike(requestIoLog.responseBody, `%${params.keyword.trim()}%`)
+      )
+    : undefined;
 
   const whereCondition = and(
     cursorCondition,
