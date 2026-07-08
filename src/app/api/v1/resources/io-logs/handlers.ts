@@ -35,6 +35,7 @@ export async function ioLogsHandler(c: Context): Promise<Response> {
     userName: c.req.query("userName") || null,
     startTime: c.req.query("startTime") || null,
     endTime: c.req.query("endTime") || null,
+    keyword: c.req.query("keyword") || null,
   });
 
   return jsonResponse({

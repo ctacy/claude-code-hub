@@ -54,11 +54,13 @@ export function IoLogsView() {
   const [userNameInput, setUserNameInput] = useState("");
   const [startTimeInput, setStartTimeInput] = useState("");
   const [endTimeInput, setEndTimeInput] = useState("");
+  const [keywordInput, setKeywordInput] = useState("");
   const [filters, setFilters] = useState<{
     userName: string;
     startTime: string;
     endTime: string;
-  }>({ userName: "", startTime: "", endTime: "" });
+    keyword: string;
+  }>({ userName: "", startTime: "", endTime: "", keyword: "" });
 
   // User options for the filter dropdown (value = userName snapshot)
   const [userOptions, setUserOptions] = useState<string[]>([]);
@@ -82,14 +84,16 @@ export function IoLogsView() {
       userName: userNameInput.trim(),
       startTime: startTimeInput,
       endTime: endTimeInput,
+      keyword: keywordInput.trim(),
     });
-  }, [userNameInput, startTimeInput, endTimeInput]);
+  }, [userNameInput, startTimeInput, endTimeInput, keywordInput]);
 
   const resetFilters = useCallback(() => {
     setUserNameInput("");
     setStartTimeInput("");
     setEndTimeInput("");
-    setFilters({ userName: "", startTime: "", endTime: "" });
+    setKeywordInput("");
+    setFilters({ userName: "", startTime: "", endTime: "", keyword: "" });
   }, []);
 
   const {
@@ -111,6 +115,7 @@ export function IoLogsView() {
         userName: filters.userName || null,
         startTime: toIso(filters.startTime),
         endTime: toIso(filters.endTime),
+        keyword: filters.keyword || null,
       });
       if (!result.ok) throw new Error(result.error ?? "Failed to fetch I/O logs");
       return result.data;
@@ -175,6 +180,20 @@ export function IoLogsView() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="io-logs-filter-keyword" className="text-xs text-muted-foreground">
+              {t("filters.keyword")}
+            </label>
+            <Input
+              id="io-logs-filter-keyword"
+              type="text"
+              placeholder={t("filters.keywordPlaceholder")}
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+              className="h-8 w-48"
+            />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="io-logs-filter-start" className="text-xs text-muted-foreground">

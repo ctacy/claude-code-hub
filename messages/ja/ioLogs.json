@@ -18,6 +18,8 @@
     "startTime": "開始時刻",
     "endTime": "終了時刻",
     "allUsers": "すべてのユーザー",
+    "keyword": "キーワード",
+    "keywordPlaceholder": "リクエスト/レスポンスを検索",
     "apply": "検索",
     "reset": "リセット"
   },

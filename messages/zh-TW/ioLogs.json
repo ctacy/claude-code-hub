@@ -18,6 +18,8 @@
     "startTime": "開始時間",
     "endTime": "結束時間",
     "allUsers": "全部使用者",
+    "keyword": "關鍵字",
+    "keywordPlaceholder": "搜尋請求/回應內容",
     "apply": "查詢",
     "reset": "重置"
   },

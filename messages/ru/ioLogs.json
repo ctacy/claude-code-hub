@@ -18,6 +18,8 @@
     "startTime": "Начало",
     "endTime": "Конец",
     "allUsers": "Все пользователи",
+    "keyword": "Ключевое слово",
+    "keywordPlaceholder": "Поиск по запросу/ответу",
     "apply": "Поиск",
     "reset": "Сброс"
   },

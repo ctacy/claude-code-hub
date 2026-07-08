@@ -43,6 +43,7 @@ const IoLogListQuerySchema = z.object({
   userName: z.string().optional(),
   startTime: z.string().datetime({ offset: true }).optional(),
   endTime: z.string().datetime({ offset: true }).optional(),
+  keyword: z.string().max(200).optional(),
 });
 
 ioLogsRouter.openapi(

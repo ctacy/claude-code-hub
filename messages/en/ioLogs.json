@@ -18,6 +18,8 @@
     "startTime": "Start Time",
     "endTime": "End Time",
     "allUsers": "All Users",
+    "keyword": "Keyword",
+    "keywordPlaceholder": "Search request/response",
     "apply": "Search",
     "reset": "Reset"
   },

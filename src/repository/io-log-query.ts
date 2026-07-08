@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, lt, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, lt, lte, or } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { requestIoLog } from "@/drizzle/io-log-schema";
 import { messageRequest } from "@/drizzle/schema";
@@ -26,12 +26,14 @@ export type IoLogListResult = {
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
 
+// AI Accept 2026-07-08 main v1
 export async function listIoLogs(params: {
   limit?: number | null;
   cursor?: { createdAt: string; id: number } | null;
   userName?: string | null;
   startTime?: string | null;
   endTime?: string | null;
+  keyword?: string | null;
 }): Promise<IoLogListResult> {
   const limit = Math.min(params.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
 
@@ -45,11 +47,20 @@ export async function listIoLogs(params: {
       })()
     : undefined;
 
+  const keywordCondition =
+    params.keyword && params.keyword.trim()
+      ? or(
+          ilike(requestIoLog.requestBody, `%${params.keyword.trim()}%`),
+          ilike(requestIoLog.responseBody, `%${params.keyword.trim()}%`)
+        )
+      : undefined;
+
   const whereCondition = and(
     cursorCondition,
     params.userName ? eq(requestIoLog.userName, params.userName) : undefined,
     params.startTime ? gte(requestIoLog.createdAt, new Date(params.startTime)) : undefined,
-    params.endTime ? lte(requestIoLog.createdAt, new Date(params.endTime)) : undefined
+    params.endTime ? lte(requestIoLog.createdAt, new Date(params.endTime)) : undefined,
+    keywordCondition
   );
 
   const rows = await db
@@ -79,3 +90,4 @@ export async function listIoLogs(params: {
 
   return { items: items as IoLogRow[], nextCursor };
 }
+

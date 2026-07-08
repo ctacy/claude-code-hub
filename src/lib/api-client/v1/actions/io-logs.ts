@@ -17,6 +17,7 @@ export function getIoLogsBatch(params?: {
   userName?: string | null;
   startTime?: string | null;
   endTime?: string | null;
+  keyword?: string | null;
 }) {
   return toActionResult(
     apiGet<IoLogListResult>(
@@ -26,6 +27,7 @@ export function getIoLogsBatch(params?: {
         userName: params?.userName ?? undefined,
         startTime: params?.startTime ?? undefined,
         endTime: params?.endTime ?? undefined,
+        keyword: params?.keyword ?? undefined,
       })}`
     )
   );
