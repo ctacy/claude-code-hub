@@ -160,21 +160,46 @@ function extractAssistantText(responseText: string): string {
     }
   }
 
-  // Responses API SSE path (Codex / gpt-5.x): response.output_text.delta
-  if (responseText.includes("response.output_text.delta")) {
-    const texts: string[] = [];
+  // Responses API SSE path (Codex / gpt-5.x): text output + function calls
+  if (
+    responseText.includes("response.output_text.delta") ||
+    responseText.includes("response.function_call_arguments")
+  ) {
+    const textParts: string[] = [];
+    const toolCalls: Array<{ name: string; args: string }> = [];
     for (const line of responseText.split("\n")) {
       if (!line.startsWith("data: ")) continue;
       try {
         const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
         if (data.type === "response.output_text.delta" && typeof data.delta === "string") {
-          texts.push(data.delta);
+          textParts.push(data.delta);
+        } else if (data.type === "response.output_item.done") {
+          const item = data.item as Record<string, unknown> | undefined;
+          if (
+            item?.type === "function_call" &&
+            typeof item.name === "string" &&
+            typeof item.arguments === "string"
+          ) {
+            toolCalls.push({ name: item.name, args: item.arguments });
+          }
         }
       } catch {
         // ignore malformed SSE lines
       }
     }
-    if (texts.length > 0) return texts.join("");
+    if (textParts.length > 0 || toolCalls.length > 0) {
+      const parts: string[] = [];
+      if (textParts.length > 0) parts.push(textParts.join(""));
+      for (const tool of toolCalls) {
+        try {
+          const pretty = JSON.stringify(JSON.parse(tool.args), null, 2);
+          parts.push(`[tool_use: ${tool.name}]\n${pretty}`);
+        } catch {
+          parts.push(`[tool_use: ${tool.name}]\n${tool.args}`);
+        }
+      }
+      return parts.join("\n\n");
+    }
   }
 
   // OpenAI SSE path: choices[].delta.content
