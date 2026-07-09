@@ -161,12 +161,19 @@ function extractAssistantText(responseText: string): string {
   }
 
   // Responses API SSE path (Codex / gpt-5.x): text output + function calls
+  // Detect by any Responses API event marker to ensure this branch handles
+  // responses that have no text deltas (e.g. /clear structured-output commands)
+  // and avoids falling through to the raw-text fallback with full instructions/tools.
   if (
     responseText.includes("response.output_text.delta") ||
-    responseText.includes("response.function_call_arguments")
+    responseText.includes("response.function_call_arguments") ||
+    responseText.includes("response.created") ||
+    responseText.includes("response.completed")
   ) {
     const textParts: string[] = [];
     const toolCalls: Array<{ name: string; args: string }> = [];
+    let completedOutputText: string | null = null;
+
     for (const line of responseText.split("\n")) {
       if (!line.startsWith("data: ")) continue;
       try {
@@ -184,11 +191,31 @@ function extractAssistantText(responseText: string): string {
           ) {
             toolCalls.push({ name: item.name, args: item.arguments });
           }
+        } else if (data.type === "response.completed" && completedOutputText === null) {
+          // Extract text from output[] in the completed event as a fallback
+          // for responses that stream no text deltas (structured-output commands).
+          const response = data.response as Record<string, unknown> | undefined;
+          const output = response?.output;
+          if (Array.isArray(output) && output.length > 0) {
+            const texts = output
+              .flatMap((item: unknown) => {
+                const it = item as Record<string, unknown>;
+                if (it.type === "message" && Array.isArray(it.content)) {
+                  return (it.content as Record<string, unknown>[])
+                    .filter((c) => c.type === "output_text" && typeof c.text === "string")
+                    .map((c) => c.text as string);
+                }
+                return [];
+              })
+              .join("");
+            if (texts) completedOutputText = texts;
+          }
         }
       } catch {
         // ignore malformed SSE lines
       }
     }
+
     if (textParts.length > 0 || toolCalls.length > 0) {
       const parts: string[] = [];
       if (textParts.length > 0) parts.push(textParts.join(""));
@@ -202,6 +229,11 @@ function extractAssistantText(responseText: string): string {
       }
       return parts.join("\n\n");
     }
+
+    // No text deltas — return completed output text or empty string.
+    // Never fall through to raw-text fallback for Responses API streams:
+    // those events embed full instructions/tools that must not be stored.
+    return completedOutputText ?? "";
   }
 
   // OpenAI SSE path: choices[].delta.content
