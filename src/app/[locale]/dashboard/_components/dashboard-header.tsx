@@ -28,7 +28,12 @@ export async function DashboardHeader({ session, locale }: DashboardHeaderProps)
     { href: "/dashboard/io-logs", label: t("ioLogs"), adminOnly: true },
     ...(portalEnabled
       ? [
-          { href: "/portal/summaries", label: t("portal"), adminOnly: true, external: true } as DashboardNavItem & {
+          {
+            href: "/portal/summaries",
+            label: t("portal"),
+            adminOnly: true,
+            external: true,
+          } as DashboardNavItem & {
             adminOnly?: boolean;
           },
         ]
