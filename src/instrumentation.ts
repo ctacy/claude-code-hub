@@ -430,6 +430,16 @@ export async function register() {
       const { scheduleNotifications } = await import("@/lib/notification/notification-queue");
       await scheduleNotifications();
 
+      // 初始化 portal 每日工作总结定时任务（独立门户功能，与现有队列并列注册）
+      try {
+        const { scheduleDailyWorkSummary } = await import("@/jobs/daily-work-summary-queue");
+        await scheduleDailyWorkSummary();
+      } catch (error) {
+        logger.warn("[Instrumentation] Failed to schedule daily work summary job", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+
       // 初始化智能探测调度器（如果启用）
       const { startProbeScheduler, isSmartProbingEnabled } = await import(
         "@/lib/circuit-breaker-probe"

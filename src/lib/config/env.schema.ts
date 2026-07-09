@@ -101,6 +101,24 @@ export const EnvSchema = z.object({
     },
     z.string().min(16, "CSRF_SECRET 至少需要 16 个字符")
   ),
+  // Portal 独立门户登录凭据（明文比对，不做哈希）
+  // - 与主系统 API Key / users 表完全无关的单一共享账号
+  // - 未配置时 /portal/* 登录接口直接拒绝所有登录尝试
+  PORTAL_USERNAME: optionalPreprocessed((val) => {
+    if (!val || typeof val !== "string") return undefined;
+    return val;
+  }, z.string().min(1, "PORTAL_USERNAME 不能为空")),
+  PORTAL_PASSWORD: optionalPreprocessed((val) => {
+    if (!val || typeof val !== "string") return undefined;
+    return val;
+  }, z.string().min(1, "PORTAL_PASSWORD 不能为空")),
+  // Portal session 有效期（秒），默认 12 小时
+  PORTAL_SESSION_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(60, "PORTAL_SESSION_TTL_SECONDS 不能小于 60")
+    .max(2_592_000, "PORTAL_SESSION_TTL_SECONDS 不能大于 2592000")
+    .default(43_200),
   // ⚠️ 注意: 不要使用 z.coerce.boolean(),它会把字符串 "false" 转换为 true!
   // 原因: Boolean("false") === true (任何非空字符串都是 truthy)
   // 正确做法: 使用 transform 显式处理 "false" 和 "0" 字符串
@@ -211,4 +229,13 @@ export function isLegacyActionsApiEnabled(): boolean {
 
 export function isApiKeyAdminAccessEnabled(): boolean {
   return getEnvConfig().ENABLE_API_KEY_ADMIN_ACCESS;
+}
+
+/**
+ * Portal 独立门户是否已配置账号。
+ * 未配置时 /portal/* 应直接拒绝登录，而不是允许任意凭据通过。
+ */
+export function isPortalConfigured(): boolean {
+  const env = getEnvConfig();
+  return Boolean(env.PORTAL_USERNAME && env.PORTAL_PASSWORD);
 }

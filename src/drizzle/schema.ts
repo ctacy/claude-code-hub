@@ -1172,3 +1172,6 @@ export const messageRequestRelations = relations(messageRequest, ({ one }) => ({
 
 // I/O log table — defined in a separate file to avoid merge conflicts with upstream schema changes
 export * from "./io-log-schema";
+
+// Portal module tables (daily work summary) — separate file, standalone module, no FK to core tables
+export * from "./portal-schema";

@@ -4,6 +4,7 @@ import { type Locale, localeCookieName } from "@/i18n/config";
 import { getLocaleFromValue, normalizePathnameForLocaleNavigation } from "@/i18n/pathname";
 import { routing } from "@/i18n/routing";
 import { AUTH_COOKIE_NAME } from "@/lib/auth";
+import { PORTAL_SESSION_COOKIE_NAME } from "@/lib/auth/portal-session";
 import { isDevelopment } from "@/lib/config/env.schema";
 import { logger } from "@/lib/logger";
 
@@ -16,6 +17,11 @@ const PUBLIC_PATH_PATTERNS = [
   "/api/auth/login",
   "/api/auth/logout",
 ];
+
+// Portal public paths (no portal session required)。注意：matcher 配置排除了所有
+// `/api/*` 路径（见文件末尾），中间件不会运行在 `/api/portal/*` 上——那些路由必须在
+// 各自 handler 内部自行调用 getPortalSession() 校验，这里仅处理 `/portal/*` 页面路由。
+const PORTAL_PUBLIC_PATH_PATTERNS = ["/portal/login"];
 
 const API_PROXY_PATH = "/v1";
 
@@ -39,6 +45,24 @@ function proxyHandler(request: NextRequest) {
 
   if (isDevelopment()) {
     logger.info("Request received", { method: method.toUpperCase(), pathname });
+  }
+
+  // ── Portal 独立门户路由（不走 next-intl locale，不走主系统 auth cookie）──
+  // 仅处理 `/portal/*` 页面；`/api/portal/*` 被 matcher 排除，鉴权在各 handler 内自行完成。
+  if (pathname.startsWith("/portal")) {
+    // 公开路径（登录页、登录/注销 API）无需 session
+    if (PORTAL_PUBLIC_PATH_PATTERNS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+      return NextResponse.next();
+    }
+    // 其余 portal 路径只检查 cookie 存在性；真正的 session 验证在 layout/page 层完成
+    const portalCookie = sanitizedRequest.cookies.get(PORTAL_SESSION_COOKIE_NAME);
+    if (!portalCookie) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/portal/login";
+      url.searchParams.set("from", pathname);
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
   }
 
   // API 代理路由不需要 locale 处理和 Web 鉴权（使用自己的 Bearer token）
