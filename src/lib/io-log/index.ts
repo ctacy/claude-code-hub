@@ -176,9 +176,11 @@ function extractAssistantText(responseText: string): string {
         } else if (data.type === "response.output_item.done") {
           const item = data.item as Record<string, unknown> | undefined;
           if (
-            item?.type === "function_call" &&
+            item &&
             typeof item.name === "string" &&
-            typeof item.arguments === "string"
+            typeof item.arguments === "string" &&
+            typeof item.type === "string" &&
+            item.type.endsWith("_call")
           ) {
             toolCalls.push({ name: item.name, args: item.arguments });
           }
