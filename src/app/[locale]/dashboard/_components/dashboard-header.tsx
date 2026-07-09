@@ -1,11 +1,11 @@
 import { getTranslations } from "next-intl/server";
-import { isPortalConfigured } from "@/lib/config/env.schema";
 import { VersionUpdateNotifier } from "@/components/customs/version-update-notifier";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { Link } from "@/i18n/routing";
 import type { AuthSession } from "@/lib/auth";
+import { isPortalConfigured } from "@/lib/config/env.schema";
 import { DashboardNav, type DashboardNavItem } from "./dashboard-nav";
 import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
