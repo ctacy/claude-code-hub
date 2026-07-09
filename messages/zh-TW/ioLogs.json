@@ -1,6 +1,7 @@
 {
   "title": "請求日誌",
   "description": "查看每次代理請求的完整輸入內容與回應輸出。",
+  "portalLink": "工作總結入口",
   "empty": "目前無 I/O 日誌記錄。請將 ENABLE_IO_BODY_LOGGING 設定為 true 後重試。",
   "loadError": "載入 I/O 日誌失敗。",
   "refresh": "重新整理",
