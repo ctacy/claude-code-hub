@@ -1,6 +1,6 @@
 {
   "title": "请求日志",
-  "description": "查看每次代理请求的完整输入内容与响应输出。",
+  "description": "查看每次请求的完整输入内容与响应输出。",
   "portalLink": "AI使用分析",
   "empty": "暂无 I/O 日志记录。请将 ENABLE_IO_BODY_LOGGING 设置为 true 后重试。",
   "loadError": "加载 I/O 日志失败。",
