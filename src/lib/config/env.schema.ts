@@ -104,14 +104,20 @@ export const EnvSchema = z.object({
   // Portal 独立门户登录凭据（明文比对，不做哈希）
   // - 与主系统 API Key / users 表完全无关的单一共享账号
   // - 未配置时 /portal/* 登录接口直接拒绝所有登录尝试
-  PORTAL_USERNAME: optionalPreprocessed((val) => {
-    if (!val || typeof val !== "string") return undefined;
-    return val;
-  }, z.string().min(1, "PORTAL_USERNAME 不能为空")),
-  PORTAL_PASSWORD: optionalPreprocessed((val) => {
-    if (!val || typeof val !== "string") return undefined;
-    return val;
-  }, z.string().min(1, "PORTAL_PASSWORD 不能为空")),
+  PORTAL_USERNAME: optionalPreprocessed(
+    (val) => {
+      if (!val || typeof val !== "string") return undefined;
+      return val;
+    },
+    z.string().min(1, "PORTAL_USERNAME 不能为空")
+  ),
+  PORTAL_PASSWORD: optionalPreprocessed(
+    (val) => {
+      if (!val || typeof val !== "string") return undefined;
+      return val;
+    },
+    z.string().min(1, "PORTAL_PASSWORD 不能为空")
+  ),
   // Portal session 有效期（秒），默认 12 小时
   PORTAL_SESSION_TTL_SECONDS: z.coerce
     .number()
