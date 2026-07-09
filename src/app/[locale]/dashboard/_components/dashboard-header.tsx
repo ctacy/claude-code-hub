@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { isPortalConfigured } from "@/lib/config/env.schema";
 import { VersionUpdateNotifier } from "@/components/customs/version-update-notifier";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -19,11 +20,15 @@ export async function DashboardHeader({ session, locale }: DashboardHeaderProps)
   const isAdmin = session?.user.role === "admin";
   const canUseDashboard = !!session && (isAdmin || session.key.canLoginWebUi);
   const documentationItem = { href: "/usage-doc", label: t("documentation") };
+  const portalEnabled = isPortalConfigured();
 
   const NAV_ITEMS: (DashboardNavItem & { adminOnly?: boolean })[] = [
     { href: "/dashboard", label: t("dashboard") },
     { href: "/dashboard/logs", label: t("usageLogs") },
     { href: "/dashboard/io-logs", label: t("ioLogs"), adminOnly: true },
+    ...(portalEnabled
+      ? [{ href: "/portal/summaries", label: t("portal"), adminOnly: true } as DashboardNavItem & { adminOnly?: boolean }]
+      : []),
     { href: "/dashboard/leaderboard", label: t("leaderboard") },
     { href: "/dashboard/availability", label: t("availability"), adminOnly: true },
     { href: "/dashboard/providers", label: t("providers"), adminOnly: true },

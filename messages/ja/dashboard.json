@@ -820,7 +820,8 @@
     "systemSettings": "設定",
     "feedback": "フィードバック",
     "login": "ログイン",
-    "logout": "ログアウト"
+    "logout": "ログアウト",
+    "portal": "管理ポータル"
   },
   "statistics": {
     "title": "使用統計",

@@ -823,7 +823,8 @@
     "systemSettings": "Настройки",
     "feedback": "Обратная связь",
     "login": "Вход",
-    "logout": "Выход"
+    "logout": "Выход",
+    "portal": "Портал"
   },
   "statistics": {
     "title": "Статистика",
