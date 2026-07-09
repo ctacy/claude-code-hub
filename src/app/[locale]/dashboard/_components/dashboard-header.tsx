@@ -5,7 +5,6 @@ import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { Link } from "@/i18n/routing";
 import type { AuthSession } from "@/lib/auth";
-import { isPortalConfigured } from "@/lib/config/env.schema";
 import { DashboardNav, type DashboardNavItem } from "./dashboard-nav";
 import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
@@ -20,24 +19,11 @@ export async function DashboardHeader({ session, locale }: DashboardHeaderProps)
   const isAdmin = session?.user.role === "admin";
   const canUseDashboard = !!session && (isAdmin || session.key.canLoginWebUi);
   const documentationItem = { href: "/usage-doc", label: t("documentation") };
-  const portalEnabled = isPortalConfigured();
 
   const NAV_ITEMS: (DashboardNavItem & { adminOnly?: boolean })[] = [
     { href: "/dashboard", label: t("dashboard") },
     { href: "/dashboard/logs", label: t("usageLogs") },
     { href: "/dashboard/io-logs", label: t("ioLogs"), adminOnly: true },
-    ...(portalEnabled
-      ? [
-          {
-            href: "/portal/summaries",
-            label: t("portal"),
-            adminOnly: true,
-            external: true,
-          } as DashboardNavItem & {
-            adminOnly?: boolean;
-          },
-        ]
-      : []),
     { href: "/dashboard/leaderboard", label: t("leaderboard") },
     { href: "/dashboard/availability", label: t("availability"), adminOnly: true },
     { href: "/dashboard/providers", label: t("providers"), adminOnly: true },

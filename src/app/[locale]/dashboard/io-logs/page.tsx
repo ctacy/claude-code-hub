@@ -31,6 +31,8 @@ export default async function IoLogsPage({ params }: { params: Promise<{ locale:
         {portalEnabled && (
           <a
             href="/portal/summaries"
+            target="_blank"
+            rel="noopener noreferrer"
             className="shrink-0 mt-1 text-sm text-primary hover:underline"
           >
             {t("portalLink")} →
