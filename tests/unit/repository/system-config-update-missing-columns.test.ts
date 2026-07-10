@@ -298,10 +298,22 @@ describe("SystemSettings：数据库缺列时的保存兜底", () => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
 
-    // 第一次 select(fullSelection) 因新列缺失而抛 42703；
-    // 第二次 select(selectionWithoutEffortConflict) 命中——验证新列已加入降级链最外层。
+    // RECENT_COLUMN_LADDER 当前顺序（最新在最前）：
+    //   0: dailySummaryModel
+    //   1: dailySummaryPrompt
+    //   2: enableThinkingEffortConflictRectifier  ← 目标列
+    //   3: billHedgeLosers
+    //   ...
+    //
+    // buildSelectAttempts() 每层累加剥离一列：
+    //   Attempt 0 (full)             → 42703 失败
+    //   Attempt 1 (strip [0])        → 42703 失败（enableThinkingEffortConflictRectifier 仍在）
+    //   Attempt 2 (strip [0..1])     → 42703 失败（enableThinkingEffortConflictRectifier 仍在）
+    //   Attempt 3 (strip [0..2])     → 命中，enableThinkingEffortConflictRectifier 已剥，billHedgeLosers 保留
     const selectMock = vi
       .fn()
+      .mockReturnValueOnce(createRejectedThenableQuery({ code: "42703" }))
+      .mockReturnValueOnce(createRejectedThenableQuery({ code: "42703" }))
       .mockReturnValueOnce(createRejectedThenableQuery({ code: "42703" }))
       .mockReturnValueOnce(
         createThenableQuery([
@@ -335,15 +347,16 @@ describe("SystemSettings：数据库缺列时的保存兜底", () => {
     const result = await getSystemSettings();
 
     // 降级读取成功（未抛错）。
-    expect(selectMock).toHaveBeenCalledTimes(2);
+    expect(selectMock).toHaveBeenCalledTimes(4);
     expect(result.siteTitle).toBe("Claude Code Hub");
     expect(result.enableHttp2).toBe(true);
 
-    // 关键回归保护：第二次 select 必须恰好剥离了新列（最外层降级），
-    // 而非旧行为先剥离 billHedgeLosers。若新列未加入降级链最外层，下面两条断言会失败。
-    const secondSelection = selectMock.mock.calls[1]?.[0] as Record<string, unknown>;
-    expect(secondSelection).not.toHaveProperty("enableThinkingEffortConflictRectifier");
-    expect(secondSelection).toHaveProperty("billHedgeLosers");
+    // 关键回归保护：第 4 次 select（Attempt 3，strip [0..2]）必须恰好剥离了目标列，
+    // 而 billHedgeLosers（index 3）仍在。若 enableThinkingEffortConflictRectifier 未正确
+    // 出现在降级链中，下面两条断言会失败。
+    const fourthSelection = selectMock.mock.calls[3]?.[0] as Record<string, unknown>;
+    expect(fourthSelection).not.toHaveProperty("enableThinkingEffortConflictRectifier");
+    expect(fourthSelection).toHaveProperty("billHedgeLosers");
 
     vi.useRealTimers();
   });
