@@ -177,7 +177,7 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
           const requestCount = userLogs.length;
           const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
 
-          let provider = await pickInternalLlmProvider([]);
+          const provider = await pickInternalLlmProvider([]);
           if (!provider) {
             const reason =
               "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider";
