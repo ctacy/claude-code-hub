@@ -124,14 +124,6 @@ function buildPrompt(
     .replace(/\{logsText\}/g, logsText);
 }
 
-function inferProviderTypes(model: string | null): string[] | undefined {
-  if (!model) return undefined;
-  const m = model.toLowerCase();
-  if (m.startsWith("claude")) return ["claude", "claude-auth"];
-  if (m.startsWith("gemini")) return ["gemini", "gemini-cli"];
-  return ["openai-compatible", "codex"];
-}
-
 export async function runDailyWorkSummary(options?: { dateOverride?: string }): Promise<RunResult> {
   const timezone = await resolveSystemTimezone();
   const dateStr =
@@ -185,65 +177,62 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
           const requestCount = userLogs.length;
           const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
 
-          const providerTypes = inferProviderTypes(modelOverride);
-          const provider = await pickInternalLlmProvider([], providerTypes);
-          if (!provider) {
-            const reason = modelOverride
-              ? `no_provider: 无匹配 ${providerTypes?.join("/") ?? ""} 类型的可用 Provider，请在 Dashboard 中配置对应 Provider`
-              : "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider";
-            logger.error("[DailyWorkSummary] No provider for user", { userName, dateStr });
-            return { ok: false, userName, reason };
-          }
+          // Tier waterfall: 先穷举 Claude 端点，全败再穷举 Codex 端点
+          const PROVIDER_TIERS = [
+            { types: ["claude", "claude-auth"] },
+            { types: ["openai-compatible", "codex"] },
+          ] as const;
 
-          const result = await callInternalLlmForSummary(provider, prompt, modelOverride);
+          // modelOverride 只传给原生 tier，避免把 Claude model 名传给 Codex 端点
+          const isClaudeModel = !modelOverride || modelOverride.toLowerCase().startsWith("claude");
+          let lastError: string | undefined;
 
-          if (!result.ok) {
-            const retryProvider = await pickInternalLlmProvider([provider.id], providerTypes);
-            if (retryProvider) {
-              const retryResult = await callInternalLlmForSummary(
-                retryProvider,
-                prompt,
-                modelOverride
-              );
-              if (retryResult.ok) {
+          for (const tier of PROVIDER_TIERS) {
+            const isNativeTier = tier.types[0].startsWith("claude")
+              ? isClaudeModel
+              : !isClaudeModel;
+            const tierModel = isNativeTier ? modelOverride : null;
+            const excludedIds: number[] = [];
+
+            for (;;) {
+              const provider = await pickInternalLlmProvider(excludedIds, [...tier.types]);
+              if (!provider) break; // 当前 tier 已无可用端点，换下一层
+
+              const result = await callInternalLlmForSummary(provider, prompt, tierModel);
+              if (result.ok) {
                 await upsertDailyWorkSummary({
                   userName,
                   date: dateStr,
                   requestCount,
-                  summary: retryResult.result.data,
-                  providerId: retryProvider.id,
-                  model: retryResult.result.model,
-                  inputTokens: retryResult.result.inputTokens,
-                  outputTokens: retryResult.result.outputTokens,
+                  summary: result.result.data,
+                  providerId: provider.id,
+                  model: result.result.model,
+                  inputTokens: result.result.inputTokens,
+                  outputTokens: result.result.outputTokens,
                 });
-                logger.info("[DailyWorkSummary] User done (retry)", { userName, dateStr });
-                return { ok: true, userName };
+                logger.info("[DailyWorkSummary] User done", {
+                  userName,
+                  dateStr,
+                  requestCount,
+                  providerType: provider.providerType,
+                });
+                return { ok: true as const, userName };
               }
-              const reason = formatLlmError(retryResult.error);
-              logger.error("[DailyWorkSummary] Failed after retry", { userName, dateStr, reason });
-              return { ok: false, userName, reason };
+
+              lastError = formatLlmError(result.error);
+              excludedIds.push(provider.id);
+              logger.warn("[DailyWorkSummary] Provider failed, trying next", {
+                userName,
+                dateStr,
+                providerId: provider.id,
+                tier: tier.types[0],
+                reason: lastError,
+              });
             }
-            const reason = formatLlmError(result.error);
-            logger.error("[DailyWorkSummary] Failed (no retry provider)", {
-              userName,
-              dateStr,
-              reason,
-            });
-            return { ok: false, userName, reason };
           }
 
-          await upsertDailyWorkSummary({
-            userName,
-            date: dateStr,
-            requestCount,
-            summary: result.result.data,
-            providerId: provider.id,
-            model: result.result.model,
-            inputTokens: result.result.inputTokens,
-            outputTokens: result.result.outputTokens,
-          });
-          logger.info("[DailyWorkSummary] User done", { userName, dateStr, requestCount });
-          return { ok: true, userName };
+          logger.error("[DailyWorkSummary] All providers exhausted", { userName, dateStr });
+          return { ok: false as const, userName, reason: lastError ?? "all providers exhausted" };
         } catch (error) {
           const reason = `unexpected: ${error instanceof Error ? error.message : String(error)}`;
           logger.error("[DailyWorkSummary] Unexpected error for user", {

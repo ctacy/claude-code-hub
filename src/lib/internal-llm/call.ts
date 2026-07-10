@@ -134,19 +134,27 @@ function parseResponse(
   responseText: string,
   providerId: number
 ): { ok: true; result: InternalLlmResult } | { ok: false; error: InternalLlmError } {
+  // 第一步：尝试 JSON.parse；若失败（thinking block signature 含非法 JSON 字符），走 regex fallback
+  let parsed: Record<string, unknown> | null = null;
   try {
-    const parsed = JSON.parse(responseText) as Record<string, unknown>;
+    parsed = JSON.parse(responseText) as Record<string, unknown>;
+  } catch {
+    // fall through to regex path
+  }
 
-    // 提取 token 用量
+  let contentText = "";
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let model = "";
+
+  if (parsed) {
     const usage = parsed.usage as Record<string, number> | undefined;
-    const inputTokens = usage?.input_tokens ?? usage?.prompt_tokens ?? 0;
-    const outputTokens = usage?.output_tokens ?? usage?.completion_tokens ?? 0;
-    const model = (parsed.model as string) ?? "";
+    inputTokens = usage?.input_tokens ?? usage?.prompt_tokens ?? 0;
+    outputTokens = usage?.output_tokens ?? usage?.completion_tokens ?? 0;
+    model = (parsed.model as string) ?? "";
 
-    // 提取 content 文本
-    let contentText = "";
     if (Array.isArray(parsed.content)) {
-      // Anthropic format
+      // Anthropic format（含/不含 type:"message" 包装，过滤掉 thinking blocks）
       for (const block of parsed.content as Record<string, unknown>[]) {
         if (block.type === "text" && typeof block.text === "string") {
           contentText += block.text;
@@ -166,15 +174,32 @@ function parseResponse(
       >[];
       contentText = (parts?.[0]?.text as string) ?? "";
     }
-
-    if (!contentText.trim()) {
-      logger.warn("[InternalLLM] empty content in response", { providerId });
-      return {
-        ok: false,
-        error: { reason: "empty_content", preview: responseText.slice(0, 200) },
-      };
+  } else {
+    // JSON.parse 失败：thinking block signature 含非法字符，用 regex 提取 text blocks
+    logger.warn("[InternalLLM] JSON.parse failed, falling back to regex text extraction", {
+      providerId,
+      preview: responseText.slice(0, 100),
+    });
+    const textBlockRe = /\{"type"\s*:\s*"text"\s*,\s*"text"\s*:\s*"((?:[^"\\]|\\.)*)"\}/g;
+    let m: RegExpExecArray | null;
+    while ((m = textBlockRe.exec(responseText)) !== null) {
+      try {
+        contentText += JSON.parse(`"${m[1]}"`);
+      } catch {
+        contentText += m[1];
+      }
     }
+  }
 
+  if (!contentText.trim()) {
+    logger.warn("[InternalLLM] empty content in response", { providerId });
+    return {
+      ok: false,
+      error: { reason: "empty_content", preview: responseText.slice(0, 200) },
+    };
+  }
+
+  try {
     // 解析 JSON（有时 LLM 会在 JSON 前后加 markdown 代码块）
     const jsonMatch =
       contentText.match(/```(?:json)?\s*([\s\S]+?)```/) ?? contentText.match(/(\{[\s\S]+\})/);
