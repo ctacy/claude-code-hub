@@ -23,10 +23,12 @@ const MAX_PICK_ATTEMPTS = 3;
  * 随机选取一个可用 provider，失败自动切换。
  *
  * @param excludeIds 已失败 provider id，不再选取
+ * @param providerTypes 只选匹配类型的 provider（如 ["claude","claude-auth"]）；空/不传则不限制
  * @returns 可用的 provider，或 null（全部失败）
  */
 export async function pickInternalLlmProvider(
-  excludeIds: number[] = []
+  excludeIds: number[] = [],
+  providerTypes?: string[]
 ): Promise<PickedProvider | null> {
   for (let attempt = 0; attempt < MAX_PICK_ATTEMPTS; attempt++) {
     const candidate = await db
@@ -42,7 +44,10 @@ export async function pickInternalLlmProvider(
         and(
           sql`${providers.isEnabled} = true`,
           isNull(providers.deletedAt),
-          excludeIds.length > 0 ? notInArray(providers.id, excludeIds) : undefined
+          excludeIds.length > 0 ? notInArray(providers.id, excludeIds) : undefined,
+          providerTypes && providerTypes.length > 0
+            ? sql`${providers.providerType} = ANY(${providerTypes})`
+            : undefined
         )
       )
       .orderBy(sql`RANDOM()`)

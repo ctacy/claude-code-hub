@@ -124,6 +124,14 @@ function buildPrompt(
     .replace(/\{logsText\}/g, logsText);
 }
 
+function inferProviderTypes(model: string | null): string[] | undefined {
+  if (!model) return undefined;
+  const m = model.toLowerCase();
+  if (m.startsWith("claude")) return ["claude", "claude-auth"];
+  if (m.startsWith("gemini")) return ["gemini", "gemini-cli"];
+  return ["openai-compatible", "codex"];
+}
+
 export async function runDailyWorkSummary(options?: { dateOverride?: string }): Promise<RunResult> {
   const timezone = await resolveSystemTimezone();
   const dateStr =
@@ -177,10 +185,12 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
           const requestCount = userLogs.length;
           const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
 
-          const provider = await pickInternalLlmProvider([]);
+          const providerTypes = inferProviderTypes(modelOverride);
+          const provider = await pickInternalLlmProvider([], providerTypes);
           if (!provider) {
-            const reason =
-              "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider";
+            const reason = modelOverride
+              ? `no_provider: 无匹配 ${providerTypes?.join("/") ?? ""} 类型的可用 Provider，请在 Dashboard 中配置对应 Provider`
+              : "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider";
             logger.error("[DailyWorkSummary] No provider for user", { userName, dateStr });
             return { ok: false, userName, reason };
           }
@@ -188,7 +198,7 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
           const result = await callInternalLlmForSummary(provider, prompt, modelOverride);
 
           if (!result.ok) {
-            const retryProvider = await pickInternalLlmProvider([provider.id]);
+            const retryProvider = await pickInternalLlmProvider([provider.id], providerTypes);
             if (retryProvider) {
               const retryResult = await callInternalLlmForSummary(
                 retryProvider,
