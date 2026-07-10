@@ -173,6 +173,7 @@ export async function getCachedSystemSettings(): Promise<SystemSettings> {
       ipGeoLookupEnabled: true,
       createdAt: new Date(),
       updatedAt: new Date(),
+      dailySummaryPrompt: null,
     } satisfies SystemSettings;
   }
 }

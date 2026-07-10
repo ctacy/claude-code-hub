@@ -879,6 +879,10 @@ export const systemSettings = pgTable('system_settings', {
     .notNull()
     .default(5),
 
+  // 每日工作总结 LLM 提示词模板（null 表示使用内置默认值）
+  // 可用变量：{userName} {date} {requestCount} {logsText}
+  dailySummaryPrompt: text('daily_summary_prompt'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });

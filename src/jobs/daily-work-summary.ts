@@ -13,6 +13,29 @@ import { pickInternalLlmProvider } from "@/lib/internal-llm/pick-provider";
 import { logger } from "@/lib/logger";
 import { resolveSystemTimezone } from "@/lib/utils/timezone";
 import { upsertDailyWorkSummary } from "@/repository/daily-work-summary";
+import { getSystemSettings } from "@/repository/system-config";
+
+export const DEFAULT_SUMMARY_PROMPT = `你是一个工作内容分析师。
+以下是用户 "{userName}" 在 {date} 的 {requestCount} 条 AI 请求记录（已截取部分内容）：
+
+{logsText}
+
+请分析这位用户当天的工作内容，以 JSON 格式返回：
+{
+  "tags": {
+    "debugging": <int, 调试/排查问题相关请求数>,
+    "documentation": <int, 写文档/注释/说明相关请求数>,
+    "code_gen": <int, 代码生成/实现功能相关请求数>,
+    "refactor": <int, 重构/优化代码相关请求数>,
+    "testing": <int, 测试/写测试用例相关请求数>,
+    "other": <int, 以上无法归类的请求数>
+  },
+  "summary": "<200字以内自然语言总结，主语用'该用户'，包含主要工作主题、产出和关键成果>"
+}
+注意：
+- tags 各项之和不需要严格等于总请求数，按实际分类估算即可
+- summary 不要列出具体对话内容，只总结工作主题和成果
+- 只输出 JSON，不要有任何其他文字`;
 
 export interface RunResult {
   dateStr: string;
@@ -60,7 +83,8 @@ function buildPrompt(
   userName: string,
   date: string,
   requestCount: number,
-  logs: Array<{ requestBody: string | null; responseBody: string | null }>
+  logs: Array<{ requestBody: string | null; responseBody: string | null }>,
+  template?: string | null
 ): string {
   const MAX_BODY_LEN = 500;
   const MAX_LOG_ENTRIES = 100;
@@ -74,27 +98,11 @@ function buildPrompt(
     })
     .join("\n\n");
 
-  return `你是一个工作内容分析师。
-以下是用户 "${userName}" 在 ${date} 的 ${requestCount} 条 AI 请求记录（已截取部分内容）：
-
-${logsText}
-
-请分析这位用户当天的工作内容，以 JSON 格式返回：
-{
-  "tags": {
-    "debugging": <int, 调试/排查问题相关请求数>,
-    "documentation": <int, 写文档/注释/说明相关请求数>,
-    "code_gen": <int, 代码生成/实现功能相关请求数>,
-    "refactor": <int, 重构/优化代码相关请求数>,
-    "testing": <int, 测试/写测试用例相关请求数>,
-    "other": <int, 以上无法归类的请求数>
-  },
-  "summary": "<200字以内自然语言总结，主语用'该用户'，包含主要工作主题、产出和关键成果>"
-}
-注意：
-- tags 各项之和不需要严格等于总请求数，按实际分类估算即可
-- summary 不要列出具体对话内容，只总结工作主题和成果
-- 只输出 JSON，不要有任何其他文字`;
+  return (template || DEFAULT_SUMMARY_PROMPT)
+    .replace(/\{userName\}/g, userName)
+    .replace(/\{date\}/g, date)
+    .replace(/\{requestCount\}/g, String(requestCount))
+    .replace(/\{logsText\}/g, logsText);
 }
 
 export async function runDailyWorkSummary(options?: { dateOverride?: string }): Promise<RunResult> {
@@ -106,6 +114,9 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
   const { start, endExclusive } = buildDayRangeCondition(dateStr, timezone);
 
   logger.info("[DailyWorkSummary] Starting", { dateStr, timezone });
+
+  const settings = await getSystemSettings().catch(() => null);
+  const promptTemplate = settings?.dailySummaryPrompt ?? null;
 
   // 拉取昨日所有有 userName 的 io-log 记录（日历日边界按系统配置时区计算，与 leaderboard 查询口径一致）
   const rows = await db
@@ -160,7 +171,7 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
 
     try {
       const requestCount = userLogs.length;
-      const prompt = buildPrompt(userName, dateStr, requestCount, userLogs);
+      const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
       const result = await callInternalLlmForSummary(provider, prompt);
 
       if (!result) {

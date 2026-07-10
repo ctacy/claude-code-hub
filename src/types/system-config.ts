@@ -143,6 +143,9 @@ export interface SystemSettings {
 
   createdAt: Date;
   updatedAt: Date;
+
+  // 每日工作总结 LLM 提示词模板（null 表示使用内置默认值）
+  dailySummaryPrompt: string | null;
 }
 
 export interface UpdateSystemSettingsInput {
@@ -241,4 +244,5 @@ export interface UpdateSystemSettingsInput {
   // Public Status 全局配置（可选）
   publicStatusWindowHours?: number;
   publicStatusAggregationIntervalMinutes?: number;
+  dailySummaryPrompt?: string | null;
 }

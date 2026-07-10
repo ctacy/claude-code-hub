@@ -194,6 +194,7 @@ function createFallbackSettings(): SystemSettings {
     ipGeoLookupEnabled: true,
     createdAt: now,
     updatedAt: now,
+    dailySummaryPrompt: null,
   };
 }
 
