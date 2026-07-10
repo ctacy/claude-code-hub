@@ -62,7 +62,7 @@ export async function callInternalLlmForSummary(
   try {
     const response = await fetch(url, {
       method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(INTERNAL_LLM_TIMEOUT_MS),
     });
@@ -112,6 +112,7 @@ function buildSummaryRequestBody(
       model,
       max_tokens: 1024,
       stream: false,
+      thinking: { type: "disabled" },
       system: systemMsg,
       messages: [{ role: "user", content: promptText }],
     };
@@ -144,7 +145,7 @@ function parseResponse(
 
     // 提取 content 文本
     let contentText = "";
-    if (parsed.type === "message" && Array.isArray(parsed.content)) {
+    if (Array.isArray(parsed.content)) {
       // Anthropic format
       for (const block of parsed.content as Record<string, unknown>[]) {
         if (block.type === "text" && typeof block.text === "string") {
