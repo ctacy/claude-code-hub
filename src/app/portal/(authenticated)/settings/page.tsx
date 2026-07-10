@@ -58,9 +58,8 @@ export default function PortalSettingsPage() {
       <div className="space-y-3">
         <h2 className="text-sm font-semibold">LLM 模型</h2>
         <p className="text-xs text-muted-foreground">
-          留空则按 Provider 类型使用内置默认值（Claude →
-          claude-opus-4-8，OpenAI-compatible/Codex → gpt-5.6-sol，Gemini →
-          gemini-2.5-flash）。
+          留空则按 Provider 类型使用内置默认值（Claude → claude-opus-4-8，OpenAI-compatible/Codex →
+          gpt-5.6-sol，Gemini → gemini-2.5-flash）。
         </p>
         <Input
           value={model}
