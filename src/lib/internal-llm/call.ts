@@ -87,15 +87,15 @@ function getDefaultModelForType(providerType: ProviderType): string {
   switch (providerType) {
     case "claude":
     case "claude-auth":
-      return "claude-haiku-4-5-20251001";
+      return "claude-opus-4-8";
     case "codex":
     case "openai-compatible":
-      return "gpt-4.1-mini";
+      return "gpt-5.6-sol";
     case "gemini":
     case "gemini-cli":
       return "gemini-2.5-flash";
     default:
-      return "claude-haiku-4-5-20251001";
+      return "claude-opus-4-8";
   }
 }
 
