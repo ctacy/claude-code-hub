@@ -45,7 +45,13 @@
     "i18n:audit-placeholders": "node scripts/audit-settings-placeholders.js --scope=settings,dashboard,myUsage --format=tsv",
     "i18n:audit-placeholders:fail": "node scripts/audit-settings-placeholders.js --scope=settings,dashboard,myUsage --format=tsv --fail",
     "i18n:audit-messages-no-emoji": "node scripts/audit-messages-no-emoji.js --format=tsv",
-    "i18n:audit-messages-no-emoji:fail": "node scripts/audit-messages-no-emoji.js --format=tsv --fail"
+    "i18n:audit-messages-no-emoji:fail": "node scripts/audit-messages-no-emoji.js --format=tsv --fail",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
   },
   "dependencies": {
     "@bull-board/api": "^7",
@@ -142,6 +148,8 @@
     "bun-types": "^1",
     "drizzle-kit": "^0.31",
     "happy-dom": "^20",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
     "typescript": "^6",
