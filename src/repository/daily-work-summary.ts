@@ -189,9 +189,6 @@ export async function listAllUsersWithSummaryByDate(
     .orderBy(desc(dailyWorkSummary.requestCount), asc(users.name));
 
   return rows.map((r) =>
-    r.id
-      ? (r as DailySummaryRow)
-      : { userName: r.userName, date: r.date, requestCount: null }
+    r.id ? (r as DailySummaryRow) : { userName: r.userName, date: r.date, requestCount: null }
   ) as Array<DailySummaryRow | { userName: string; date: string; requestCount: null }>;
 }
-
