@@ -46,7 +46,7 @@ export async function pickInternalLlmProvider(
           isNull(providers.deletedAt),
           excludeIds.length > 0 ? notInArray(providers.id, excludeIds) : undefined,
           providerTypes && providerTypes.length > 0
-            ? sql`${providers.providerType} = ANY(${providerTypes})`
+            ? sql`${providers.providerType} IN ${providerTypes}`
             : undefined
         )
       )
