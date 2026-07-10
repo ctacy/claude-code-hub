@@ -8,13 +8,13 @@
 import { and, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { requestIoLog } from "@/drizzle/io-log-schema";
+import type { InternalLlmError } from "@/lib/internal-llm/call";
 import { callInternalLlmForSummary } from "@/lib/internal-llm/call";
 import { pickInternalLlmProvider } from "@/lib/internal-llm/pick-provider";
 import { logger } from "@/lib/logger";
 import { resolveSystemTimezone } from "@/lib/utils/timezone";
 import { upsertDailyWorkSummary } from "@/repository/daily-work-summary";
 import { getSystemSettings } from "@/repository/system-config";
-import type { InternalLlmError } from "@/lib/internal-llm/call";
 
 function formatLlmError(error: InternalLlmError): string {
   switch (error.reason) {

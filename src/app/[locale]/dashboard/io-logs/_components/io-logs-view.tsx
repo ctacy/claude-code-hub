@@ -21,6 +21,7 @@ import { searchUsersForFilter } from "@/lib/api-client/v1/actions/users";
 
 type FetchLogsFn = typeof getIoLogsBatch;
 type FetchUsersFn = typeof searchUsersForFilter;
+
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils/date-format";
 import { IoLogDetailSheet } from "./io-log-detail-sheet";
@@ -83,7 +84,7 @@ export function IoLogsView({
     return () => {
       alive = false;
     };
-  }, []);
+  }, [fetchUsers]);
 
   // datetime-local (no tz) → ISO string with offset; empty → null
   const toIso = (v: string): string | null => (v ? new Date(v).toISOString() : null);

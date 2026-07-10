@@ -1,7 +1,7 @@
 "use client";
 
-import type { IoLogListResult } from "@/lib/api-client/v1/actions/io-logs";
 import { apiGet, searchParams, toActionResult } from "@/lib/api-client/v1/actions/_compat";
+import type { IoLogListResult } from "@/lib/api-client/v1/actions/io-logs";
 
 export type { IoLogItem } from "@/lib/api-client/v1/actions/io-logs";
 
