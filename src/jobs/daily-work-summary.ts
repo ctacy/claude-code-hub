@@ -225,7 +225,11 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
         failedCount++;
         const reason = formatLlmError(result.error);
         failedUsers.push({ userName, reason });
-        logger.error("[DailyWorkSummary] Failed (no retry provider)", { userName, dateStr, reason });
+        logger.error("[DailyWorkSummary] Failed (no retry provider)", {
+          userName,
+          dateStr,
+          reason,
+        });
         continue;
       }
 
