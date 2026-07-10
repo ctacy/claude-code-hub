@@ -31,10 +31,17 @@ export function SummariesToolbar({ date }: { date?: string }) {
       if (!res.ok) {
         setResult(`失败：${data.error ?? res.statusText}`);
       } else {
-        const failureReason = data.failureReason ? `\n原因：${data.failureReason}` : "";
-        setResult(
-          `完成：${data.dateStr} 共 ${data.total} 用户，成功 ${data.ok}，失败 ${data.failed}${failureReason}`
-        );
+        let msg = `完成：${data.dateStr} 共 ${data.total} 用户，成功 ${data.ok}，失败 ${data.failed}`;
+        if (data.failureReason) {
+          msg += `\n原因：${data.failureReason}`;
+        }
+        if (data.failedUsers && data.failedUsers.length > 0) {
+          msg += "\n失败用户：";
+          for (const { userName, reason } of data.failedUsers) {
+            msg += `\n  - ${userName}: ${reason}`;
+          }
+        }
+        setResult(msg);
         if (data.ok > 0) router.refresh();
       }
     } catch (e) {
@@ -88,7 +95,9 @@ export function SummariesToolbar({ date }: { date?: string }) {
           重新汇总{dateInput ? `（${dateInput}）` : "（昨日）"}
         </Button>
       </div>
-      {result && <p className="text-xs text-muted-foreground">{result}</p>}
+      {result && (
+        <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-sans">{result}</pre>
+      )}
     </div>
   );
 }

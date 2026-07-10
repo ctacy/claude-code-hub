@@ -32,14 +32,21 @@ export interface InternalLlmResult {
   model: string;
 }
 
+export interface InternalLlmError {
+  reason: "fetch_failed" | "non_200" | "empty_content" | "parse_failed" | "invalid_structure";
+  detail?: string;
+  status?: number;
+  preview?: string;
+}
+
 /**
  * 调用内部 LLM 生成工作总结 JSON。
- * 返回 null 表示失败（网络、解析、超时均视为失败）。
+ * 返回 { ok: true, result } 或 { ok: false, error }。
  */
 export async function callInternalLlmForSummary(
   provider: PickedProvider,
   promptText: string
-): Promise<InternalLlmResult | null> {
+): Promise<{ ok: true; result: InternalLlmResult } | { ok: false; error: InternalLlmError }> {
   const providerType = (provider.providerType || "claude") as ProviderType;
 
   const defaultModel = getDefaultModelForType(providerType);
@@ -60,16 +67,15 @@ export async function callInternalLlmForSummary(
     status = response.status;
     responseText = await response.text();
   } catch (error) {
-    logger.error("[InternalLLM] fetch failed", {
-      providerId: provider.id,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return null;
+    const detail = error instanceof Error ? error.message : String(error);
+    logger.error("[InternalLLM] fetch failed", { providerId: provider.id, error: detail });
+    return { ok: false, error: { reason: "fetch_failed", detail } };
   }
 
   if (status !== 200) {
-    logger.error("[InternalLLM] non-200 response", { providerId: provider.id, status });
-    return null;
+    const preview = responseText.slice(0, 200);
+    logger.error("[InternalLLM] non-200 response", { providerId: provider.id, status, preview });
+    return { ok: false, error: { reason: "non_200", status, preview } };
   }
 
   return parseResponse(responseText, provider.id);
@@ -121,7 +127,10 @@ function buildSummaryRequestBody(
   };
 }
 
-function parseResponse(responseText: string, providerId: number): InternalLlmResult | null {
+function parseResponse(
+  responseText: string,
+  providerId: number
+): { ok: true; result: InternalLlmResult } | { ok: false; error: InternalLlmError } {
   try {
     const parsed = JSON.parse(responseText) as Record<string, unknown>;
 
@@ -157,7 +166,10 @@ function parseResponse(responseText: string, providerId: number): InternalLlmRes
 
     if (!contentText.trim()) {
       logger.warn("[InternalLLM] empty content in response", { providerId });
-      return null;
+      return {
+        ok: false,
+        error: { reason: "empty_content", preview: responseText.slice(0, 200) },
+      };
     }
 
     // 解析 JSON（有时 LLM 会在 JSON 前后加 markdown 代码块）
@@ -170,7 +182,13 @@ function parseResponse(responseText: string, providerId: number): InternalLlmRes
     // 基本结构校验
     if (!data.tags || typeof data.tags !== "object" || typeof data.summary !== "string") {
       logger.warn("[InternalLLM] invalid JSON structure", { providerId, data });
-      return null;
+      return {
+        ok: false,
+        error: {
+          reason: "invalid_structure",
+          preview: JSON.stringify(data).slice(0, 200),
+        },
+      };
     }
 
     // 保证 tags 字段都是数字
@@ -181,12 +199,13 @@ function parseResponse(responseText: string, providerId: number): InternalLlmRes
       }
     );
 
-    return { data, inputTokens, outputTokens, model };
+    return { ok: true, result: { data, inputTokens, outputTokens, model } };
   } catch (error) {
-    logger.error("[InternalLLM] failed to parse LLM response", {
-      providerId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return null;
+    const detail = error instanceof Error ? error.message : String(error);
+    logger.error("[InternalLLM] failed to parse LLM response", { providerId, error: detail });
+    return {
+      ok: false,
+      error: { reason: "parse_failed", detail, preview: responseText.slice(0, 200) },
+    };
   }
 }

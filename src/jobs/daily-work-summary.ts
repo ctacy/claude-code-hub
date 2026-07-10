@@ -14,6 +14,24 @@ import { logger } from "@/lib/logger";
 import { resolveSystemTimezone } from "@/lib/utils/timezone";
 import { upsertDailyWorkSummary } from "@/repository/daily-work-summary";
 import { getSystemSettings } from "@/repository/system-config";
+import type { InternalLlmError } from "@/lib/internal-llm/call";
+
+function formatLlmError(error: InternalLlmError): string {
+  switch (error.reason) {
+    case "fetch_failed":
+      return `fetch_failed: ${error.detail ?? "unknown"}`;
+    case "non_200":
+      return `non_200 (${error.status}): ${error.preview ?? ""}`.slice(0, 150);
+    case "empty_content":
+      return `empty_content: ${error.preview ?? ""}`.slice(0, 150);
+    case "parse_failed":
+      return `parse_failed: ${error.detail ?? ""} | ${error.preview ?? ""}`.slice(0, 150);
+    case "invalid_structure":
+      return `invalid_structure: ${error.preview ?? ""}`.slice(0, 150);
+    default:
+      return `unknown: ${JSON.stringify(error)}`.slice(0, 150);
+  }
+}
 
 export const DEFAULT_SUMMARY_PROMPT = `你是一个工作内容分析师。
 以下是用户 "{userName}" 在 {date} 的 {requestCount} 条 AI 请求记录（已截取部分内容）：
@@ -43,6 +61,7 @@ export interface RunResult {
   ok: number;
   failed: number;
   failureReason?: string;
+  failedUsers?: Array<{ userName: string; reason: string }>;
 }
 
 /** 系统时区下"昨天"的日历日期字符串（YYYY-MM-DD）。用 Intl 取"今天"再退一天，避免 DST 误差。 */
@@ -149,6 +168,7 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
 
   let okCount = 0;
   let failedCount = 0;
+  const failedUsers: Array<{ userName: string; reason: string }> = [];
   const excludedProviderIds: number[] = [];
 
   for (const [userName, userLogs] of byUser) {
@@ -166,6 +186,7 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
         ok: okCount,
         failed: failedCount,
         failureReason: "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider",
+        failedUsers,
       };
     }
 
@@ -174,29 +195,37 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
       const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
       const result = await callInternalLlmForSummary(provider, prompt);
 
-      if (!result) {
+      if (!result.ok) {
         excludedProviderIds.push(provider.id);
         // 换一个 provider 重试一次
         provider = await pickInternalLlmProvider(excludedProviderIds);
         if (provider) {
           const retryResult = await callInternalLlmForSummary(provider, prompt);
-          if (retryResult) {
+          if (retryResult.ok) {
             await upsertDailyWorkSummary({
               userName,
               date: dateStr,
               requestCount,
-              summary: retryResult.data,
+              summary: retryResult.result.data,
               providerId: provider.id,
-              model: retryResult.model,
-              inputTokens: retryResult.inputTokens,
-              outputTokens: retryResult.outputTokens,
+              model: retryResult.result.model,
+              inputTokens: retryResult.result.inputTokens,
+              outputTokens: retryResult.result.outputTokens,
             });
             okCount++;
+            continue;
+          } else {
+            failedCount++;
+            const reason = formatLlmError(retryResult.error);
+            failedUsers.push({ userName, reason });
+            logger.error("[DailyWorkSummary] Failed after retry", { userName, dateStr, reason });
             continue;
           }
         }
         failedCount++;
-        logger.error("[DailyWorkSummary] Failed for user after retry", { userName, dateStr });
+        const reason = formatLlmError(result.error);
+        failedUsers.push({ userName, reason });
+        logger.error("[DailyWorkSummary] Failed (no retry provider)", { userName, dateStr, reason });
         continue;
       }
 
@@ -204,25 +233,33 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
         userName,
         date: dateStr,
         requestCount,
-        summary: result.data,
+        summary: result.result.data,
         providerId: provider.id,
-        model: result.model,
-        inputTokens: result.inputTokens,
-        outputTokens: result.outputTokens,
+        model: result.result.model,
+        inputTokens: result.result.inputTokens,
+        outputTokens: result.result.outputTokens,
       });
       okCount++;
       logger.info("[DailyWorkSummary] User done", { userName, dateStr, requestCount });
     } catch (error) {
       failedCount++;
+      const reason = `unexpected: ${error instanceof Error ? error.message : String(error)}`;
+      failedUsers.push({ userName, reason });
       logger.error("[DailyWorkSummary] Unexpected error for user", {
         userName,
         dateStr,
-        error: error instanceof Error ? error.message : String(error),
+        error: reason,
       });
     }
   }
 
-  const result: RunResult = { dateStr, total: byUser.size, ok: okCount, failed: failedCount };
+  const result: RunResult = {
+    dateStr,
+    total: byUser.size,
+    ok: okCount,
+    failed: failedCount,
+    failedUsers: failedUsers.length > 0 ? failedUsers : undefined,
+  };
   logger.info("[DailyWorkSummary] Done", result);
   return result;
 }
