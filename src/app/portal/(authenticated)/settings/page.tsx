@@ -33,8 +33,14 @@ export default function PortalSettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, model }),
       });
-      const data = await res.json();
-      setMsg(res.ok ? "保存成功" : `保存失败：${data.error ?? res.statusText}`);
+      let data: Record<string, unknown> = {};
+      try {
+        data = await res.json();
+      } catch {
+        setMsg(`保存失败：服务器返回了无效响应 (${res.status})`);
+        return;
+      }
+      setMsg(res.ok ? "保存成功" : `保存失败：${(data.error as string) ?? res.statusText}`);
     } catch (e) {
       setMsg(`请求异常：${e instanceof Error ? e.message : String(e)}`);
     } finally {

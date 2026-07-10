@@ -29,9 +29,16 @@ export async function POST(request: NextRequest) {
   const prompt = body.prompt.trim() || null;
   const model = typeof body.model === "string" ? body.model.trim() || null : undefined;
 
-  await updateSystemSettings({
-    dailySummaryPrompt: prompt,
-    ...(model !== undefined ? { dailySummaryModel: model } : {}),
-  });
+  try {
+    await updateSystemSettings({
+      dailySummaryPrompt: prompt,
+      ...(model !== undefined ? { dailySummaryModel: model } : {}),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: `保存失败：${error instanceof Error ? error.message : String(error)}` },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }
