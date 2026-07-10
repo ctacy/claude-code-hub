@@ -761,6 +761,12 @@ export async function updateSystemSettings(
     if (payload.fakeStreamingWhitelist !== undefined) {
       updates.fakeStreamingWhitelist = payload.fakeStreamingWhitelist;
     }
+    if (payload.dailySummaryPrompt !== undefined) {
+      updates.dailySummaryPrompt = payload.dailySummaryPrompt;
+    }
+    if (payload.dailySummaryModel !== undefined) {
+      updates.dailySummaryModel = payload.dailySummaryModel;
+    }
 
     let updated;
     try {

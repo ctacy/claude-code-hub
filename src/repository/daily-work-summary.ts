@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { dailyWorkSummary } from "@/drizzle/portal-schema";
 import { users } from "@/drizzle/schema";
@@ -185,7 +185,12 @@ export async function listAllUsersWithSummaryByDate(
       dailyWorkSummary,
       and(eq(users.name, dailyWorkSummary.userName), eq(dailyWorkSummary.date, date))
     )
-    .where(isNull(users.deletedAt))
+    .where(
+      or(
+        and(isNull(users.deletedAt), eq(users.isEnabled, true)),
+        sql`${dailyWorkSummary.id} IS NOT NULL`
+      )
+    )
     .orderBy(desc(dailyWorkSummary.requestCount), asc(users.name));
 
   return rows.map((r) =>
