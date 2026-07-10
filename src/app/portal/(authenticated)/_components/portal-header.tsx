@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/portal/summaries", label: "AI使用分析" },
-  { href: "/dashboard/io-logs", label: "请求记录", external: true },
+  { href: "/portal/io-logs", label: "请求记录" },
 ];
 
 export function PortalHeader({ username }: { username: string }) {
@@ -27,30 +27,18 @@ export function PortalHeader({ username }: { username: string }) {
         <div className="flex items-center gap-6">
           <span className="text-sm font-semibold">管理门户</span>
           <nav className="flex items-center gap-4">
-            {NAV_ITEMS.map((item) =>
-              item.external ? (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {item.label}
-                </a>
-              ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "text-sm text-muted-foreground transition-colors hover:text-foreground",
-                    pathname?.startsWith(item.href) && "text-foreground font-medium"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "text-sm text-muted-foreground transition-colors hover:text-foreground",
+                  pathname?.startsWith(item.href) && "text-foreground font-medium"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
         </div>
         <div className="flex items-center gap-3">

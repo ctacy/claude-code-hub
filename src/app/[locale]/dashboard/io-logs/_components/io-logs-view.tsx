@@ -18,6 +18,9 @@ import { Switch } from "@/components/ui/switch";
 import { useVirtualizedInfiniteList } from "@/hooks/use-virtualized-infinite-list";
 import { getIoLogsBatch, type IoLogItem } from "@/lib/api-client/v1/actions/io-logs";
 import { searchUsersForFilter } from "@/lib/api-client/v1/actions/users";
+
+type FetchLogsFn = typeof getIoLogsBatch;
+type FetchUsersFn = typeof searchUsersForFilter;
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils/date-format";
 import { IoLogDetailSheet } from "./io-log-detail-sheet";
@@ -43,7 +46,13 @@ function requestPreview(body: string | null): string {
   return truncate(body);
 }
 
-export function IoLogsView() {
+export function IoLogsView({
+  fetchLogs = getIoLogsBatch,
+  fetchUsers = searchUsersForFilter,
+}: {
+  fetchLogs?: FetchLogsFn;
+  fetchUsers?: FetchUsersFn;
+} = {}) {
   const t = useTranslations("ioLogs");
   const locale = useLocale();
   const [selectedLog, setSelectedLog] = useState<IoLogItem | null>(null);
@@ -66,7 +75,7 @@ export function IoLogsView() {
   const [userOptions, setUserOptions] = useState<string[]>([]);
   useEffect(() => {
     let alive = true;
-    void searchUsersForFilter(undefined, 500).then((result) => {
+    void fetchUsers(undefined, 500).then((result) => {
       if (!alive || !result.ok) return;
       // Dedupe by name; filter snapshots are matched by name
       setUserOptions([...new Set(result.data.map((u) => u.name))]);
@@ -109,7 +118,7 @@ export function IoLogsView() {
   } = useInfiniteQuery({
     queryKey: ["io-logs-batch", filters],
     queryFn: async ({ pageParam }) => {
-      const result = await getIoLogsBatch({
+      const result = await fetchLogs({
         cursor: pageParam ?? null,
         limit: BATCH_SIZE,
         userName: filters.userName || null,
