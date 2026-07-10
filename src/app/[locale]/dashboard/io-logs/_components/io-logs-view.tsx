@@ -167,9 +167,8 @@ export function IoLogsView({
   return (
     <div className="space-y-4">
       {/* Toolbar: 筛选条件 + 手动刷新 + 5s 自动刷新（同一行） */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1">
+      <div className="flex items-end gap-3 overflow-x-auto">
+          <div className="flex flex-col gap-1 shrink-0">
             <label htmlFor="io-logs-filter-user" className="text-xs text-muted-foreground">
               {t("columns.user")}
             </label>
@@ -234,9 +233,8 @@ export function IoLogsView({
           <Button variant="ghost" size="sm" onClick={resetFilters}>
             {t("filters.reset")}
           </Button>
-        </div>
-
-        <div className="ml-auto flex items-center gap-4">
+          <div className="flex-1" />
+          <div className="flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-2">
             <Switch
               id="io-logs-auto-refresh"
