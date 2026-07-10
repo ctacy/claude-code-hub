@@ -59,7 +59,7 @@ export default async function PortalSummariesPage({
                     ? `/portal/summaries/${encodeURIComponent(row.userName)}/${row.date}`
                     : "#"
                 }
-                className={`flex items-center min-h-11 text-sm border-b border-border/40 last:border-b-0 transition-colors ${
+                className={`group flex items-start min-h-11 text-sm border-b border-border/40 last:border-b-0 transition-colors ${
                   hasData ? "hover:bg-accent/50" : "pointer-events-none opacity-50"
                 }`}
               >
@@ -70,7 +70,7 @@ export default async function PortalSummariesPage({
                 <div className="w-24 px-3 py-2 shrink-0 text-muted-foreground">
                   {hasData ? row.requestCount : "—"}
                 </div>
-                <div className="flex-1 px-3 pr-3 py-2 text-xs text-muted-foreground line-clamp-2">
+                <div className="flex-1 px-3 pr-3 py-2 text-xs text-muted-foreground line-clamp-1 group-hover:line-clamp-none">
                   {hasData ? (row as any).summaryText : "当日无请求"}
                 </div>
               </Link>
