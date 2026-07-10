@@ -255,6 +255,8 @@ const BASE_SETTINGS_COLUMNS: SettingsSelection = {
   enableHighConcurrencyMode: systemSettings.enableHighConcurrencyMode,
   ipExtractionConfig: systemSettings.ipExtractionConfig,
   ipGeoLookupEnabled: systemSettings.ipGeoLookupEnabled,
+  dailySummaryPrompt: systemSettings.dailySummaryPrompt,
+  dailySummaryModel: systemSettings.dailySummaryModel,
 };
 
 // 近代新增列的降级阶梯：最新列在最前，第 N 层降级累计剥离前 N 项。
@@ -266,6 +268,18 @@ const RECENT_COLUMN_LADDER: ReadonlyArray<{
   // 本层更新失败（仍有列缺失）时记录的告警
   updateWarn: string;
 }> = [
+  {
+    key: "dailySummaryModel",
+    column: systemSettings.dailySummaryModel,
+    selectWarn: "system_settings 表除 dailySummaryModel 外仍有列缺失，继续回退到上一代字段集。",
+    updateWarn: "system_settings 表除 dailySummaryModel 外仍有列缺失，继续降级更新。",
+  },
+  {
+    key: "dailySummaryPrompt",
+    column: systemSettings.dailySummaryPrompt,
+    selectWarn: "system_settings 表除 dailySummaryPrompt 外仍有列缺失，继续回退到上一代字段集。",
+    updateWarn: "system_settings 表除 dailySummaryPrompt 外仍有列缺失，继续降级更新。",
+  },
   {
     key: "enableThinkingEffortConflictRectifier",
     column: systemSettings.enableThinkingEffortConflictRectifier,
