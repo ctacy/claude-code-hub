@@ -31,7 +31,9 @@ export function SummariesToolbar({ date }: { date?: string }) {
       if (!res.ok) {
         setResult(`失败：${data.error ?? res.statusText}`);
       } else {
-        setResult(`完成：${data.dateStr} 共 ${data.total} 用户，成功 ${data.ok}，失败 ${data.failed}`);
+        setResult(
+          `完成：${data.dateStr} 共 ${data.total} 用户，成功 ${data.ok}，失败 ${data.failed}`
+        );
         router.refresh();
       }
     } catch (e) {
@@ -61,7 +63,15 @@ export function SummariesToolbar({ date }: { date?: string }) {
           查询
         </Button>
         {date && (
-          <Button variant="ghost" size="sm" className="mt-5" onClick={() => { setDateInput(""); applyDate(""); }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-5"
+            onClick={() => {
+              setDateInput("");
+              applyDate("");
+            }}
+          >
             重置
           </Button>
         )}
@@ -77,9 +87,7 @@ export function SummariesToolbar({ date }: { date?: string }) {
           重新汇总{dateInput ? `（${dateInput}）` : "（昨日）"}
         </Button>
       </div>
-      {result && (
-        <p className="text-xs text-muted-foreground">{result}</p>
-      )}
+      {result && <p className="text-xs text-muted-foreground">{result}</p>}
     </div>
   );
 }

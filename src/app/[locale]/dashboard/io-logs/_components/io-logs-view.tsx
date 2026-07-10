@@ -168,73 +168,73 @@ export function IoLogsView({
     <div className="space-y-4">
       {/* Toolbar: 筛选条件 + 手动刷新 + 5s 自动刷新（同一行） */}
       <div className="flex items-end gap-3 overflow-x-auto">
-          <div className="flex flex-col gap-1 shrink-0">
-            <label htmlFor="io-logs-filter-user" className="text-xs text-muted-foreground">
-              {t("columns.user")}
-            </label>
-            <Select
-              value={userNameInput || "__all__"}
-              onValueChange={(v) => setUserNameInput(v === "__all__" ? "" : v)}
-            >
-              <SelectTrigger id="io-logs-filter-user" className="h-8 w-40">
-                <SelectValue placeholder={t("filters.allUsers")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">{t("filters.allUsers")}</SelectItem>
-                {userOptions.map((name) => (
-                  <SelectItem key={name} value={name}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="io-logs-filter-keyword" className="text-xs text-muted-foreground">
-              {t("filters.keyword")}
-            </label>
-            <Input
-              id="io-logs-filter-keyword"
-              type="text"
-              placeholder={t("filters.keywordPlaceholder")}
-              value={keywordInput}
-              onChange={(e) => setKeywordInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && applyFilters()}
-              className="h-8 w-48"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="io-logs-filter-start" className="text-xs text-muted-foreground">
-              {t("filters.startTime")}
-            </label>
-            <Input
-              id="io-logs-filter-start"
-              type="datetime-local"
-              value={startTimeInput}
-              onChange={(e) => setStartTimeInput(e.target.value)}
-              className="h-8 w-52"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="io-logs-filter-end" className="text-xs text-muted-foreground">
-              {t("filters.endTime")}
-            </label>
-            <Input
-              id="io-logs-filter-end"
-              type="datetime-local"
-              value={endTimeInput}
-              onChange={(e) => setEndTimeInput(e.target.value)}
-              className="h-8 w-52"
-            />
-          </div>
-          <Button variant="default" size="sm" onClick={applyFilters}>
-            {t("filters.apply")}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
-            {t("filters.reset")}
-          </Button>
-          <div className="flex-1" />
-          <div className="flex items-center gap-4 shrink-0">
+        <div className="flex flex-col gap-1 shrink-0">
+          <label htmlFor="io-logs-filter-user" className="text-xs text-muted-foreground">
+            {t("columns.user")}
+          </label>
+          <Select
+            value={userNameInput || "__all__"}
+            onValueChange={(v) => setUserNameInput(v === "__all__" ? "" : v)}
+          >
+            <SelectTrigger id="io-logs-filter-user" className="h-8 w-40">
+              <SelectValue placeholder={t("filters.allUsers")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">{t("filters.allUsers")}</SelectItem>
+              {userOptions.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="io-logs-filter-keyword" className="text-xs text-muted-foreground">
+            {t("filters.keyword")}
+          </label>
+          <Input
+            id="io-logs-filter-keyword"
+            type="text"
+            placeholder={t("filters.keywordPlaceholder")}
+            value={keywordInput}
+            onChange={(e) => setKeywordInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+            className="h-8 w-48"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="io-logs-filter-start" className="text-xs text-muted-foreground">
+            {t("filters.startTime")}
+          </label>
+          <Input
+            id="io-logs-filter-start"
+            type="datetime-local"
+            value={startTimeInput}
+            onChange={(e) => setStartTimeInput(e.target.value)}
+            className="h-8 w-52"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="io-logs-filter-end" className="text-xs text-muted-foreground">
+            {t("filters.endTime")}
+          </label>
+          <Input
+            id="io-logs-filter-end"
+            type="datetime-local"
+            value={endTimeInput}
+            onChange={(e) => setEndTimeInput(e.target.value)}
+            className="h-8 w-52"
+          />
+        </div>
+        <Button variant="default" size="sm" onClick={applyFilters}>
+          {t("filters.apply")}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={resetFilters}>
+          {t("filters.reset")}
+        </Button>
+        <div className="flex-1" />
+        <div className="flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-2">
             <Switch
               id="io-logs-auto-refresh"
