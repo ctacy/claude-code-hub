@@ -195,6 +195,7 @@ function createFallbackSettings(): SystemSettings {
     createdAt: now,
     updatedAt: now,
     dailySummaryPrompt: null,
+    dailySummaryModel: null,
   };
 }
 

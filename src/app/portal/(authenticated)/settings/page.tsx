@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function PortalSettingsPage() {
   const [prompt, setPrompt] = useState("");
+  const [model, setModel] = useState("");
   const [defaultPrompt, setDefaultPrompt] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -14,8 +16,9 @@ export default function PortalSettingsPage() {
     fetch("/api/portal/settings")
       .then((r) => r.json())
       .then((data) => {
-        setDefaultPrompt(data.default ?? "");
+        setDefaultPrompt(data.defaultPrompt ?? "");
         setPrompt(data.prompt ?? "");
+        setModel(data.model ?? "");
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -28,7 +31,7 @@ export default function PortalSettingsPage() {
       const res = await fetch("/api/portal/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, model }),
       });
       const data = await res.json();
       setMsg(res.ok ? "保存成功" : `保存失败：${data.error ?? res.statusText}`);
@@ -41,6 +44,7 @@ export default function PortalSettingsPage() {
 
   function reset() {
     setPrompt("");
+    setModel("");
     setMsg(null);
   }
 
@@ -48,7 +52,21 @@ export default function PortalSettingsPage() {
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">设置</h1>
-        <p className="mt-1 text-sm text-muted-foreground">配置工作总结生成提示词。</p>
+        <p className="mt-1 text-sm text-muted-foreground">配置工作总结生成提示词和模型。</p>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold">LLM 模型</h2>
+        <p className="text-xs text-muted-foreground">
+          留空则按 Provider 类型使用内置默认值（Claude → claude-haiku-4-5-20251001，OpenAI-compatible/Codex → gpt-4.1-mini，Gemini → gemini-2.5-flash）。
+        </p>
+        <Input
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          disabled={loading}
+          placeholder="例：claude-opus-4-8 / gpt-4o / gemini-2.0-flash"
+          className="h-9 font-mono"
+        />
       </div>
 
       <div className="space-y-3">
@@ -72,15 +90,16 @@ export default function PortalSettingsPage() {
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
           placeholder={loading ? "加载中…" : "留空使用内置默认提示词"}
         />
-        <div className="flex items-center gap-3">
-          <Button onClick={save} disabled={saving || loading} size="sm">
-            {saving ? "保存中…" : "保存"}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={reset} disabled={saving || loading}>
-            恢复默认
-          </Button>
-          {msg && <span className="text-xs text-muted-foreground">{msg}</span>}
-        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button onClick={save} disabled={saving || loading} size="sm">
+          {saving ? "保存中…" : "保存"}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={reset} disabled={saving || loading}>
+          恢复默认
+        </Button>
+        {msg && <span className="text-xs text-muted-foreground">{msg}</span>}
       </div>
 
       <div className="space-y-2">

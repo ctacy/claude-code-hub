@@ -174,6 +174,7 @@ export async function getCachedSystemSettings(): Promise<SystemSettings> {
       createdAt: new Date(),
       updatedAt: new Date(),
       dailySummaryPrompt: null,
+      dailySummaryModel: null,
     } satisfies SystemSettings;
   }
 }

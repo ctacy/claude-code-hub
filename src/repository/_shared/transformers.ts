@@ -301,5 +301,6 @@ export function toSystemSettings(dbSettings: any): SystemSettings {
     createdAt: dbSettings?.createdAt ? new Date(dbSettings.createdAt) : new Date(),
     updatedAt: dbSettings?.updatedAt ? new Date(dbSettings.updatedAt) : new Date(),
     dailySummaryPrompt: dbSettings?.dailySummaryPrompt ?? null,
+    dailySummaryModel: dbSettings?.dailySummaryModel ?? null,
   };
 }

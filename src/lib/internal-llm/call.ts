@@ -45,15 +45,17 @@ export interface InternalLlmError {
  */
 export async function callInternalLlmForSummary(
   provider: PickedProvider,
-  promptText: string
+  promptText: string,
+  modelOverride?: string | null
 ): Promise<{ ok: true; result: InternalLlmResult } | { ok: false; error: InternalLlmError }> {
   const providerType = (provider.providerType || "claude") as ProviderType;
 
   const defaultModel = getDefaultModelForType(providerType);
-  const url = getTestUrl(provider.url, providerType, defaultModel);
+  const model = modelOverride?.trim() || defaultModel;
+  const url = getTestUrl(provider.url, providerType, model);
   const headers = getTestHeaders(providerType, provider.key, provider.url);
 
-  const body = buildSummaryRequestBody(providerType, defaultModel, promptText);
+  const body = buildSummaryRequestBody(providerType, model, promptText);
 
   let responseText: string;
   let status: number;

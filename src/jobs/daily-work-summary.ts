@@ -136,6 +136,7 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
 
   const settings = await getSystemSettings().catch(() => null);
   const promptTemplate = settings?.dailySummaryPrompt ?? null;
+  const modelOverride = settings?.dailySummaryModel ?? null;
 
   // 拉取昨日所有有 userName 的 io-log 记录（日历日边界按系统配置时区计算，与 leaderboard 查询口径一致）
   const rows = await db
@@ -193,14 +194,14 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
     try {
       const requestCount = userLogs.length;
       const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
-      const result = await callInternalLlmForSummary(provider, prompt);
+      const result = await callInternalLlmForSummary(provider, prompt, modelOverride);
 
       if (!result.ok) {
         excludedProviderIds.push(provider.id);
         // 换一个 provider 重试一次
         provider = await pickInternalLlmProvider(excludedProviderIds);
         if (provider) {
-          const retryResult = await callInternalLlmForSummary(provider, prompt);
+          const retryResult = await callInternalLlmForSummary(provider, prompt, modelOverride);
           if (retryResult.ok) {
             await upsertDailyWorkSummary({
               userName,

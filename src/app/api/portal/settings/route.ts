@@ -1,8 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { DEFAULT_SUMMARY_PROMPT } from "@/jobs/daily-work-summary";
 import { getPortalSession } from "@/lib/auth/require-portal-session";
-import { getSystemSettings } from "@/repository/system-config";
-import { updateSystemSettings } from "@/repository/system-config";
+import { getSystemSettings, updateSystemSettings } from "@/repository/system-config";
 
 export const runtime = "nodejs";
 
@@ -13,7 +12,8 @@ export async function GET() {
   const settings = await getSystemSettings();
   return NextResponse.json({
     prompt: settings.dailySummaryPrompt ?? null,
-    default: DEFAULT_SUMMARY_PROMPT,
+    model: settings.dailySummaryModel ?? null,
+    defaultPrompt: DEFAULT_SUMMARY_PROMPT,
   });
 }
 
@@ -27,6 +27,11 @@ export async function POST(request: NextRequest) {
   }
 
   const prompt = body.prompt.trim() || null;
-  await updateSystemSettings({ dailySummaryPrompt: prompt });
+  const model = typeof body.model === "string" ? body.model.trim() || null : undefined;
+
+  await updateSystemSettings({
+    dailySummaryPrompt: prompt,
+    ...(model !== undefined ? { dailySummaryModel: model } : {}),
+  });
   return NextResponse.json({ ok: true });
 }

@@ -883,6 +883,9 @@ export const systemSettings = pgTable('system_settings', {
   // 可用变量：{userName} {date} {requestCount} {logsText}
   dailySummaryPrompt: text('daily_summary_prompt'),
 
+  // 每日工作总结 LLM 调用模型（null 表示按 provider 类型使用内置默认值）
+  dailySummaryModel: text('daily_summary_model'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
