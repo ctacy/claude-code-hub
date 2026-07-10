@@ -171,57 +171,80 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
   const userEntries = Array.from(byUser.entries());
 
   const perUserResults = await Promise.all(
-    userEntries.map(async ([userName, userLogs]): Promise<{ ok: boolean; userName: string; reason?: string }> => {
-      try {
-        const requestCount = userLogs.length;
-        const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
+    userEntries.map(
+      async ([userName, userLogs]): Promise<{ ok: boolean; userName: string; reason?: string }> => {
+        try {
+          const requestCount = userLogs.length;
+          const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
 
-        let provider = await pickInternalLlmProvider([]);
-        if (!provider) {
-          const reason = "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider";
-          logger.error("[DailyWorkSummary] No provider for user", { userName, dateStr });
-          return { ok: false, userName, reason };
-        }
-
-        const result = await callInternalLlmForSummary(provider, prompt, modelOverride);
-
-        if (!result.ok) {
-          const retryProvider = await pickInternalLlmProvider([provider.id]);
-          if (retryProvider) {
-            const retryResult = await callInternalLlmForSummary(retryProvider, prompt, modelOverride);
-            if (retryResult.ok) {
-              await upsertDailyWorkSummary({
-                userName, date: dateStr, requestCount,
-                summary: retryResult.result.data, providerId: retryProvider.id,
-                model: retryResult.result.model, inputTokens: retryResult.result.inputTokens,
-                outputTokens: retryResult.result.outputTokens,
-              });
-              logger.info("[DailyWorkSummary] User done (retry)", { userName, dateStr });
-              return { ok: true, userName };
-            }
-            const reason = formatLlmError(retryResult.error);
-            logger.error("[DailyWorkSummary] Failed after retry", { userName, dateStr, reason });
+          let provider = await pickInternalLlmProvider([]);
+          if (!provider) {
+            const reason =
+              "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider";
+            logger.error("[DailyWorkSummary] No provider for user", { userName, dateStr });
             return { ok: false, userName, reason };
           }
-          const reason = formatLlmError(result.error);
-          logger.error("[DailyWorkSummary] Failed (no retry provider)", { userName, dateStr, reason });
+
+          const result = await callInternalLlmForSummary(provider, prompt, modelOverride);
+
+          if (!result.ok) {
+            const retryProvider = await pickInternalLlmProvider([provider.id]);
+            if (retryProvider) {
+              const retryResult = await callInternalLlmForSummary(
+                retryProvider,
+                prompt,
+                modelOverride
+              );
+              if (retryResult.ok) {
+                await upsertDailyWorkSummary({
+                  userName,
+                  date: dateStr,
+                  requestCount,
+                  summary: retryResult.result.data,
+                  providerId: retryProvider.id,
+                  model: retryResult.result.model,
+                  inputTokens: retryResult.result.inputTokens,
+                  outputTokens: retryResult.result.outputTokens,
+                });
+                logger.info("[DailyWorkSummary] User done (retry)", { userName, dateStr });
+                return { ok: true, userName };
+              }
+              const reason = formatLlmError(retryResult.error);
+              logger.error("[DailyWorkSummary] Failed after retry", { userName, dateStr, reason });
+              return { ok: false, userName, reason };
+            }
+            const reason = formatLlmError(result.error);
+            logger.error("[DailyWorkSummary] Failed (no retry provider)", {
+              userName,
+              dateStr,
+              reason,
+            });
+            return { ok: false, userName, reason };
+          }
+
+          await upsertDailyWorkSummary({
+            userName,
+            date: dateStr,
+            requestCount,
+            summary: result.result.data,
+            providerId: provider.id,
+            model: result.result.model,
+            inputTokens: result.result.inputTokens,
+            outputTokens: result.result.outputTokens,
+          });
+          logger.info("[DailyWorkSummary] User done", { userName, dateStr, requestCount });
+          return { ok: true, userName };
+        } catch (error) {
+          const reason = `unexpected: ${error instanceof Error ? error.message : String(error)}`;
+          logger.error("[DailyWorkSummary] Unexpected error for user", {
+            userName,
+            dateStr,
+            error: reason,
+          });
           return { ok: false, userName, reason };
         }
-
-        await upsertDailyWorkSummary({
-          userName, date: dateStr, requestCount,
-          summary: result.result.data, providerId: provider.id,
-          model: result.result.model, inputTokens: result.result.inputTokens,
-          outputTokens: result.result.outputTokens,
-        });
-        logger.info("[DailyWorkSummary] User done", { userName, dateStr, requestCount });
-        return { ok: true, userName };
-      } catch (error) {
-        const reason = `unexpected: ${error instanceof Error ? error.message : String(error)}`;
-        logger.error("[DailyWorkSummary] Unexpected error for user", { userName, dateStr, error: reason });
-        return { ok: false, userName, reason };
       }
-    })
+    )
   );
 
   const okCount = perUserResults.filter((r) => r.ok).length;
