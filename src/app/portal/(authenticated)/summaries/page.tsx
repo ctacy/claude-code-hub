@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { listDailySummariesByDate, listSummaryUsers } from "@/repository/daily-work-summary";
+import {
+  listAllUsersWithSummaryByDate,
+  listLatestSummariesPerUser,
+} from "@/repository/daily-work-summary";
 import { SummariesToolbar } from "./_components/summaries-toolbar";
 
 export const dynamic = "force-dynamic";
@@ -14,16 +17,8 @@ export default async function PortalSummariesPage({
   const dateValid = date && /^\d{4}-\d{2}-\d{2}$/.test(date);
 
   const rows = dateValid
-    ? (await listDailySummariesByDate(date)).map((r) => ({
-        userName: r.userName,
-        date: r.date,
-        requestCount: r.requestCount,
-      }))
-    : (await listSummaryUsers()).map((u) => ({
-        userName: u.userName,
-        date: u.latestDate,
-        requestCount: u.totalRequests,
-      }));
+    ? await listAllUsersWithSummaryByDate(date)
+    : await listLatestSummariesPerUser();
 
   return (
     <div className="space-y-4">
@@ -49,21 +44,38 @@ export default async function PortalSummariesPage({
       ) : (
         <div className="rounded-md border">
           <div className="bg-muted/30 border-b flex items-center h-9 text-xs font-medium text-muted-foreground/80">
-            <div className="flex-1 pl-3">用户</div>
-            <div className="w-40 px-3">{dateValid ? "总结日期" : "最近总结日期"}</div>
-            <div className="w-32 px-3">{dateValid ? "当日请求数" : "累计请求数"}</div>
+            <div className="w-32 pl-3 shrink-0">用户</div>
+            <div className="w-32 px-3 shrink-0">{dateValid ? "总结日期" : "最近总结日期"}</div>
+            <div className="w-24 px-3 shrink-0">{dateValid ? "当日请求数" : "请求数"}</div>
+            <div className="flex-1 px-3 pr-3">工作总结</div>
           </div>
-          {rows.map((u) => (
-            <Link
-              key={`${u.userName}-${u.date}`}
-              href={`/portal/summaries/${encodeURIComponent(u.userName)}/${u.date}`}
-              className="flex items-center h-11 text-sm border-b border-border/40 last:border-b-0 hover:bg-accent/50 transition-colors"
-            >
-              <div className="flex-1 pl-3 truncate">{u.userName}</div>
-              <div className="w-40 px-3 font-mono text-xs text-muted-foreground">{u.date}</div>
-              <div className="w-32 px-3 text-muted-foreground">{u.requestCount}</div>
-            </Link>
-          ))}
+          {rows.map((row) => {
+            const hasData = row.requestCount !== null;
+            return (
+              <Link
+                key={`${row.userName}-${row.date}`}
+                href={
+                  hasData
+                    ? `/portal/summaries/${encodeURIComponent(row.userName)}/${row.date}`
+                    : "#"
+                }
+                className={`flex items-center min-h-11 text-sm border-b border-border/40 last:border-b-0 transition-colors ${
+                  hasData ? "hover:bg-accent/50" : "pointer-events-none opacity-50"
+                }`}
+              >
+                <div className="w-32 pl-3 py-2 shrink-0 truncate">{row.userName}</div>
+                <div className="w-32 px-3 py-2 shrink-0 font-mono text-xs text-muted-foreground">
+                  {row.date}
+                </div>
+                <div className="w-24 px-3 py-2 shrink-0 text-muted-foreground">
+                  {hasData ? row.requestCount : "—"}
+                </div>
+                <div className="flex-1 px-3 pr-3 py-2 text-xs text-muted-foreground line-clamp-2">
+                  {hasData ? (row as any).summaryText : "当日无请求"}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

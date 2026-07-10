@@ -1,8 +1,10 @@
 "use server";
 
 import { and, asc, desc, eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { dailyWorkSummary } from "@/drizzle/portal-schema";
+import { users } from "@/drizzle/schema";
 import type { WorkSummaryJson } from "@/lib/internal-llm/call";
 
 export interface DailySummaryRow {
@@ -131,3 +133,65 @@ export async function listSummaryUsers(): Promise<
   }
   return Array.from(userMap.entries()).map(([userName, v]) => ({ userName, ...v }));
 }
+
+export async function listLatestSummariesPerUser(): Promise<DailySummaryRow[]> {
+  const subquery = db
+    .select({
+      userName: dailyWorkSummary.userName,
+      maxDate: sql<string>`MAX(${dailyWorkSummary.date})`.as("maxDate"),
+    })
+    .from(dailyWorkSummary)
+    .groupBy(dailyWorkSummary.userName)
+    .as("latest");
+
+  const rows = await db
+    .select()
+    .from(dailyWorkSummary)
+    .innerJoin(
+      subquery,
+      and(
+        eq(dailyWorkSummary.userName, subquery.userName),
+        eq(dailyWorkSummary.date, subquery.maxDate)
+      )
+    )
+    .orderBy(desc(dailyWorkSummary.requestCount));
+
+  return rows.map((r) => r.daily_work_summary as DailySummaryRow);
+}
+
+export async function listAllUsersWithSummaryByDate(
+  date: string
+): Promise<Array<DailySummaryRow | { userName: string; date: string; requestCount: null }>> {
+  const rows = await db
+    .select({
+      userName: users.name,
+      date: sql<string>`${date}`.as("date"),
+      id: dailyWorkSummary.id,
+      requestCount: dailyWorkSummary.requestCount,
+      tagsDebugging: dailyWorkSummary.tagsDebugging,
+      tagsDocumentation: dailyWorkSummary.tagsDocumentation,
+      tagsCodeGen: dailyWorkSummary.tagsCodeGen,
+      tagsRefactor: dailyWorkSummary.tagsRefactor,
+      tagsTesting: dailyWorkSummary.tagsTesting,
+      tagsOther: dailyWorkSummary.tagsOther,
+      summaryText: dailyWorkSummary.summaryText,
+      providerId: dailyWorkSummary.providerId,
+      model: dailyWorkSummary.model,
+      inputTokens: dailyWorkSummary.inputTokens,
+      outputTokens: dailyWorkSummary.outputTokens,
+      generatedAt: dailyWorkSummary.generatedAt,
+    })
+    .from(users)
+    .leftJoin(
+      dailyWorkSummary,
+      and(eq(users.name, dailyWorkSummary.userName), eq(dailyWorkSummary.date, date))
+    )
+    .orderBy(desc(dailyWorkSummary.requestCount), asc(users.name));
+
+  return rows.map((r) =>
+    r.id
+      ? (r as DailySummaryRow)
+      : { userName: r.userName, date: r.date, requestCount: null }
+  ) as Array<DailySummaryRow | { userName: string; date: string; requestCount: null }>;
+}
+
