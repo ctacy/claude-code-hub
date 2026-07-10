@@ -4,6 +4,7 @@ import { asc, eq } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { db } from "@/drizzle/db";
 import { systemSettings } from "@/drizzle/schema";
+import { invalidateSystemSettingsCache } from "@/lib/config/system-settings-cache";
 import { logger } from "@/lib/logger";
 import { DEFAULT_SITE_TITLE } from "@/lib/site-title";
 import {
@@ -821,6 +822,7 @@ export async function updateSystemSettings(
       throw new Error("更新系统设置失败");
     }
 
+    invalidateSystemSettingsCache();
     return toSystemSettings(updated);
   } catch (error) {
     if (isTableMissingError(error)) {

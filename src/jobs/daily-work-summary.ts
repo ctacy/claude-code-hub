@@ -167,102 +167,73 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
     byUser.get(name)!.push(row);
   }
 
-  let okCount = 0;
-  let failedCount = 0;
-  const failedUsers: Array<{ userName: string; reason: string }> = [];
-  const excludedProviderIds: number[] = [];
+  // 并行为每个用户生成总结
+  const userEntries = Array.from(byUser.entries());
 
-  for (const [userName, userLogs] of byUser) {
-    // 每个用户尝试拿一个 provider（沿用已选的，失败再换）
-    let provider = await pickInternalLlmProvider(excludedProviderIds);
-    if (!provider) {
-      logger.error("[DailyWorkSummary] No provider available, skipping remaining users", {
-        userName,
-        dateStr,
-      });
-      failedCount += byUser.size - okCount - failedCount;
-      return {
-        dateStr,
-        total: byUser.size,
-        ok: okCount,
-        failed: failedCount,
-        failureReason: "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider",
-        failedUsers,
-      };
-    }
+  const perUserResults = await Promise.all(
+    userEntries.map(async ([userName, userLogs]): Promise<{ ok: boolean; userName: string; reason?: string }> => {
+      try {
+        const requestCount = userLogs.length;
+        const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
 
-    try {
-      const requestCount = userLogs.length;
-      const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
-      const result = await callInternalLlmForSummary(provider, prompt, modelOverride);
-
-      if (!result.ok) {
-        excludedProviderIds.push(provider.id);
-        // 换一个 provider 重试一次
-        provider = await pickInternalLlmProvider(excludedProviderIds);
-        if (provider) {
-          const retryResult = await callInternalLlmForSummary(provider, prompt, modelOverride);
-          if (retryResult.ok) {
-            await upsertDailyWorkSummary({
-              userName,
-              date: dateStr,
-              requestCount,
-              summary: retryResult.result.data,
-              providerId: provider.id,
-              model: retryResult.result.model,
-              inputTokens: retryResult.result.inputTokens,
-              outputTokens: retryResult.result.outputTokens,
-            });
-            okCount++;
-            continue;
-          } else {
-            failedCount++;
-            const reason = formatLlmError(retryResult.error);
-            failedUsers.push({ userName, reason });
-            logger.error("[DailyWorkSummary] Failed after retry", { userName, dateStr, reason });
-            continue;
-          }
+        let provider = await pickInternalLlmProvider([]);
+        if (!provider) {
+          const reason = "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider";
+          logger.error("[DailyWorkSummary] No provider for user", { userName, dateStr });
+          return { ok: false, userName, reason };
         }
-        failedCount++;
-        const reason = formatLlmError(result.error);
-        failedUsers.push({ userName, reason });
-        logger.error("[DailyWorkSummary] Failed (no retry provider)", {
-          userName,
-          dateStr,
-          reason,
-        });
-        continue;
-      }
 
-      await upsertDailyWorkSummary({
-        userName,
-        date: dateStr,
-        requestCount,
-        summary: result.result.data,
-        providerId: provider.id,
-        model: result.result.model,
-        inputTokens: result.result.inputTokens,
-        outputTokens: result.result.outputTokens,
-      });
-      okCount++;
-      logger.info("[DailyWorkSummary] User done", { userName, dateStr, requestCount });
-    } catch (error) {
-      failedCount++;
-      const reason = `unexpected: ${error instanceof Error ? error.message : String(error)}`;
-      failedUsers.push({ userName, reason });
-      logger.error("[DailyWorkSummary] Unexpected error for user", {
-        userName,
-        dateStr,
-        error: reason,
-      });
-    }
-  }
+        const result = await callInternalLlmForSummary(provider, prompt, modelOverride);
+
+        if (!result.ok) {
+          const retryProvider = await pickInternalLlmProvider([provider.id]);
+          if (retryProvider) {
+            const retryResult = await callInternalLlmForSummary(retryProvider, prompt, modelOverride);
+            if (retryResult.ok) {
+              await upsertDailyWorkSummary({
+                userName, date: dateStr, requestCount,
+                summary: retryResult.result.data, providerId: retryProvider.id,
+                model: retryResult.result.model, inputTokens: retryResult.result.inputTokens,
+                outputTokens: retryResult.result.outputTokens,
+              });
+              logger.info("[DailyWorkSummary] User done (retry)", { userName, dateStr });
+              return { ok: true, userName };
+            }
+            const reason = formatLlmError(retryResult.error);
+            logger.error("[DailyWorkSummary] Failed after retry", { userName, dateStr, reason });
+            return { ok: false, userName, reason };
+          }
+          const reason = formatLlmError(result.error);
+          logger.error("[DailyWorkSummary] Failed (no retry provider)", { userName, dateStr, reason });
+          return { ok: false, userName, reason };
+        }
+
+        await upsertDailyWorkSummary({
+          userName, date: dateStr, requestCount,
+          summary: result.result.data, providerId: provider.id,
+          model: result.result.model, inputTokens: result.result.inputTokens,
+          outputTokens: result.result.outputTokens,
+        });
+        logger.info("[DailyWorkSummary] User done", { userName, dateStr, requestCount });
+        return { ok: true, userName };
+      } catch (error) {
+        const reason = `unexpected: ${error instanceof Error ? error.message : String(error)}`;
+        logger.error("[DailyWorkSummary] Unexpected error for user", { userName, dateStr, error: reason });
+        return { ok: false, userName, reason };
+      }
+    })
+  );
+
+  const okCount = perUserResults.filter((r) => r.ok).length;
+  const failedUsers = perUserResults
+    .filter((r) => !r.ok)
+    .map((r) => ({ userName: r.userName, reason: r.reason ?? "unknown" }));
 
   const result: RunResult = {
     dateStr,
     total: byUser.size,
     ok: okCount,
-    failed: failedCount,
+    failed: failedUsers.length,
     failedUsers: failedUsers.length > 0 ? failedUsers : undefined,
   };
   logger.info("[DailyWorkSummary] Done", result);

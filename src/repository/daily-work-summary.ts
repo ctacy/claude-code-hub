@@ -191,7 +191,7 @@ export async function listAllUsersWithSummaryByDate(
         sql`${dailyWorkSummary.id} IS NOT NULL`
       )
     )
-    .orderBy(desc(dailyWorkSummary.requestCount), asc(users.name));
+    .orderBy(sql`${dailyWorkSummary.requestCount} DESC NULLS LAST`, asc(users.name));
 
   return rows.map((r) =>
     r.id ? (r as DailySummaryRow) : { userName: r.userName, date: r.date, requestCount: null }

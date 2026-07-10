@@ -20,6 +20,13 @@ export async function POST(request: NextRequest) {
     // no body
   }
 
-  const result = await runDailyWorkSummary({ dateOverride });
-  return NextResponse.json(result);
+  try {
+    const result = await runDailyWorkSummary({ dateOverride });
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { error: `汇总失败：${error instanceof Error ? error.message : String(error)}` },
+      { status: 500 }
+    );
+  }
 }

@@ -11,7 +11,7 @@ import { getTestHeaders, getTestUrl } from "@/lib/provider-testing/utils/test-pr
 import type { ProviderType } from "@/types/provider";
 import type { PickedProvider } from "./pick-provider";
 
-const INTERNAL_LLM_TIMEOUT_MS = 60_000; // 单次调用最多 60 秒
+const INTERNAL_LLM_TIMEOUT_MS = 180_000; // 单次调用最多 180 秒
 
 export interface WorkSummaryJson {
   tags: {
