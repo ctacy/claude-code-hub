@@ -72,9 +72,7 @@ export default async function PortalSummariesPage({
                   {hasData ? row.requestCount : "—"}
                 </div>
                 <div className="flex-1 px-3 pr-3 py-2 text-xs text-muted-foreground">
-                  {hasData
-                    ? <SummaryCell text={(row as any).summaryText ?? ""} />
-                    : "当日无请求"}
+                  {hasData ? <SummaryCell text={(row as any).summaryText ?? ""} /> : "当日无请求"}
                 </div>
               </Link>
             );
