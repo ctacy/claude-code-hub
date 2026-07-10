@@ -19,6 +19,7 @@ export interface RunResult {
   total: number;
   ok: number;
   failed: number;
+  failureReason?: string;
 }
 
 /** 系统时区下"昨天"的日历日期字符串（YYYY-MM-DD）。用 Intl 取"今天"再退一天，避免 DST 误差。 */
@@ -148,7 +149,13 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
         dateStr,
       });
       failedCount += byUser.size - okCount - failedCount;
-      break;
+      return {
+        dateStr,
+        total: byUser.size,
+        ok: okCount,
+        failed: failedCount,
+        failureReason: "no_provider: Dashboard 中无可用 Provider，请先配置并启用至少一个 Provider",
+      };
     }
 
     try {

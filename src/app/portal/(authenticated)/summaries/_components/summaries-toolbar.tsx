@@ -31,10 +31,11 @@ export function SummariesToolbar({ date }: { date?: string }) {
       if (!res.ok) {
         setResult(`失败：${data.error ?? res.statusText}`);
       } else {
+        const failureReason = data.failureReason ? `\n原因：${data.failureReason}` : "";
         setResult(
-          `完成：${data.dateStr} 共 ${data.total} 用户，成功 ${data.ok}，失败 ${data.failed}`
+          `完成：${data.dateStr} 共 ${data.total} 用户，成功 ${data.ok}，失败 ${data.failed}${failureReason}`
         );
-        router.refresh();
+        if (data.ok > 0) router.refresh();
       }
     } catch (e) {
       setResult(`请求异常：${e instanceof Error ? e.message : String(e)}`);
