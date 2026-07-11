@@ -67,6 +67,23 @@ bun run db:push           # Push schema changes (dev only)
 bun run db:studio         # Open Drizzle Studio
 ```
 
+## Migration Namespace Convention
+
+This repository is a fork of [ding113/claude-code-hub](https://github.com/ding113/claude-code-hub).
+To avoid migration sequence collisions between upstream and this fork, migrations use separate number namespaces:
+
+| Range | Owner | Example |
+|-------|-------|---------|
+| `0` – `9999` | Upstream (ding113) | `0106_calm_firebird.sql` |
+| `10000` and above | This fork | `10000_request_io_log.sql` |
+
+**Rules:**
+
+- **Never manually create migration files.** Always use `bun run db:generate` — Drizzle auto-increments from the last entry in `drizzle/meta/_journal.json`.
+- Because the journal already ends at `idx=10005`, the next `bun run db:generate` will produce `idx=10006` automatically.
+- When syncing upstream: new upstream migrations (e.g., `109`, `110`) are inserted into the journal **between** the last upstream entry and `10000`. They execute before fork migrations, which is the correct order (upstream schema first, fork features on top).
+- Fork-local migrations must **never** use idx below `10000`.
+
 ## Architecture Overview
 
 ### Tech Stack
