@@ -13,7 +13,9 @@ export async function GET() {
   const rows = await db
     .selectDistinct({ groupTag: providers.groupTag })
     .from(providers)
-    .where(sql`${providers.groupTag} IS NOT NULL AND ${providers.isEnabled} = true`);
+    .where(
+      sql`${providers.groupTag} IS NOT NULL AND ${providers.isEnabled} = true AND ${providers.deletedAt} IS NULL`
+    );
 
   const tags = rows
     .map((r) => r.groupTag as string)
