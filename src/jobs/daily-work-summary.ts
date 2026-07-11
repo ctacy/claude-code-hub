@@ -13,6 +13,7 @@ import { callInternalLlmForSummary } from "@/lib/internal-llm/call";
 import { pickInternalLlmProvider } from "@/lib/internal-llm/pick-provider";
 import { logger } from "@/lib/logger";
 import { resolveSystemTimezone } from "@/lib/utils/timezone";
+import { getDailySummaryGroups } from "@/repository/daily-summary-groups";
 import { upsertDailyWorkSummary } from "@/repository/daily-work-summary";
 import { getSystemSettings } from "@/repository/system-config";
 
@@ -136,7 +137,25 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
 
   const settings = await getSystemSettings().catch(() => null);
   const promptTemplate = settings?.dailySummaryPrompt ?? null;
-  const modelOverride = settings?.dailySummaryModel ?? null;
+
+  // 加载分组配置；若无分组，则回退到内置双层瀑布
+  const configuredGroups = await getDailySummaryGroups().catch(() => []);
+  const activeGroups = configuredGroups.filter((g) => g.enabled);
+
+  // 兜底：无分组配置时使用内置 Claude → Codex 两层
+  const FALLBACK_TIERS = [
+    { name: "Claude", groupTag: null as string | null, model: null as string | null },
+    { name: "Codex", groupTag: null as string | null, model: null as string | null },
+  ];
+  const FALLBACK_PROVIDER_TYPES: Record<string, string[]> = {
+    Claude: ["claude", "claude-auth"],
+    Codex: ["openai-compatible", "codex"],
+  };
+
+  const tiers =
+    activeGroups.length > 0
+      ? activeGroups.map((g) => ({ name: g.name, groupTag: g.groupTag, model: g.model }))
+      : FALLBACK_TIERS;
 
   // 拉取昨日所有有 userName 的 io-log 记录（日历日边界按系统配置时区计算，与 leaderboard 查询口径一致）
   const rows = await db
@@ -176,29 +195,23 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
         try {
           const requestCount = userLogs.length;
           const prompt = buildPrompt(userName, dateStr, requestCount, userLogs, promptTemplate);
-
-          // Tier waterfall: 先穷举 Claude 端点，全败再穷举 Codex 端点
-          const PROVIDER_TIERS = [
-            { types: ["claude", "claude-auth"] },
-            { types: ["openai-compatible", "codex"] },
-          ] as const;
-
-          // modelOverride 只传给原生 tier，避免把 Claude model 名传给 Codex 端点
-          const isClaudeModel = !modelOverride || modelOverride.toLowerCase().startsWith("claude");
           let lastError: string | undefined;
 
-          for (const tier of PROVIDER_TIERS) {
-            const isNativeTier = tier.types[0].startsWith("claude")
-              ? isClaudeModel
-              : !isClaudeModel;
-            const tierModel = isNativeTier ? modelOverride : null;
+          for (const tier of tiers) {
             const excludedIds: number[] = [];
+            // 分组有 groupTag 时按 groupTag 筛选；否则使用内置类型列表（仅兜底路径）
+            const fallbackTypes =
+              tier.groupTag == null ? FALLBACK_PROVIDER_TYPES[tier.name] : undefined;
 
             for (;;) {
-              const provider = await pickInternalLlmProvider(excludedIds, [...tier.types]);
-              if (!provider) break; // 当前 tier 已无可用端点，换下一层
+              const provider = await pickInternalLlmProvider(
+                excludedIds,
+                fallbackTypes,
+                tier.groupTag
+              );
+              if (!provider) break;
 
-              const result = await callInternalLlmForSummary(provider, prompt, tierModel);
+              const result = await callInternalLlmForSummary(provider, prompt, tier.model);
               if (result.ok) {
                 await upsertDailyWorkSummary({
                   userName,
@@ -214,6 +227,7 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
                   userName,
                   dateStr,
                   requestCount,
+                  tier: tier.name,
                   providerType: provider.providerType,
                 });
                 return { ok: true as const, userName };
@@ -225,7 +239,7 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
                 userName,
                 dateStr,
                 providerId: provider.id,
-                tier: tier.types[0],
+                tier: tier.name,
                 reason: lastError,
               });
             }

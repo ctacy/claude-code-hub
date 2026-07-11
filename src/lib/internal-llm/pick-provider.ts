@@ -4,7 +4,7 @@
  * 每次调用时从已启用的 providers 池里随机选一个，
  * 最多重试 3 次（每次排除已失败的）。
  */
-import { and, isNull, notInArray, sql } from "drizzle-orm";
+import { and, eq, isNull, notInArray, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { providers } from "@/drizzle/schema";
 import { logger } from "@/lib/logger";
@@ -28,7 +28,8 @@ const MAX_PICK_ATTEMPTS = 3;
  */
 export async function pickInternalLlmProvider(
   excludeIds: number[] = [],
-  providerTypes?: string[]
+  providerTypes?: string[],
+  groupTag?: string | null
 ): Promise<PickedProvider | null> {
   for (let attempt = 0; attempt < MAX_PICK_ATTEMPTS; attempt++) {
     const candidate = await db
@@ -47,7 +48,8 @@ export async function pickInternalLlmProvider(
           excludeIds.length > 0 ? notInArray(providers.id, excludeIds) : undefined,
           providerTypes && providerTypes.length > 0
             ? sql`${providers.providerType} IN ${providerTypes}`
-            : undefined
+            : undefined,
+          groupTag != null ? eq(providers.groupTag, groupTag) : undefined
         )
       )
       .orderBy(sql`RANDOM()`)

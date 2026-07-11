@@ -884,8 +884,25 @@ export const systemSettings = pgTable('system_settings', {
   dailySummaryPrompt: text('daily_summary_prompt'),
 
   // 每日工作总结 LLM 调用模型（null 表示按 provider 类型使用内置默认值）
+  // 已被 daily_summary_groups 取代，保留作全局兜底
   dailySummaryModel: text('daily_summary_model'),
 
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
+// 每日工作总结分组配置：按优先级顺序穷举各分组内的 provider，全部失败才进下一分组
+export const dailySummaryGroups = pgTable('daily_summary_groups', {
+  id: serial('id').primaryKey(),
+  // 展示名称，例如 "Claude"、"Codex"
+  name: varchar('name', { length: 128 }).notNull(),
+  // 对应 providers.group_tag；null 表示不按 groupTag 过滤（选取任意可用 provider）
+  groupTag: varchar('group_tag', { length: 255 }),
+  // 本分组使用的 LLM 模型；null 表示按 provider 类型使用内置默认值
+  model: text('model'),
+  // 排序权重：升序，数值越小越先尝试
+  sortOrder: integer('sort_order').notNull().default(0),
+  enabled: boolean('enabled').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
