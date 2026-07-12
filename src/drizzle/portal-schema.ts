@@ -52,3 +52,45 @@ export const dailyWorkSummary = pgTable(
     dailyWorkSummaryDateIdx: index("idx_daily_work_summary_date").on(table.date),
   })
 );
+
+// AI Accept 2026-07-12 main v1
+export const periodWorkSummary = pgTable(
+  "period_work_summary",
+  {
+    id: serial("id").primaryKey(),
+    userName: varchar("user_name", { length: 255 }).notNull(),
+    periodType: varchar("period_type", { length: 10 }).notNull().$type<"week" | "month" | "year">(),
+    // ISO Monday for week, first-of-month for month, first-of-year for year (YYYY-MM-DD)
+    periodStart: varchar("period_start", { length: 10 }).notNull(),
+    periodEnd: varchar("period_end", { length: 10 }).notNull(),
+    requestCount: integer("request_count").notNull().default(0),
+    dayCount: integer("day_count").notNull().default(0),
+
+    // 聚合后的标签
+    tagsDebugging: integer("tags_debugging").notNull().default(0),
+    tagsDocumentation: integer("tags_documentation").notNull().default(0),
+    tagsCodeGen: integer("tags_code_gen").notNull().default(0),
+    tagsRefactor: integer("tags_refactor").notNull().default(0),
+    tagsTesting: integer("tags_testing").notNull().default(0),
+    tagsOther: integer("tags_other").notNull().default(0),
+
+    summaryText: text("summary_text"),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    model: varchar("model", { length: 255 }),
+    providerId: integer("provider_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => ({
+    periodWorkSummaryUniq: uniqueIndex("uniq_period_work_summary_user_period").on(
+      table.userName,
+      table.periodType,
+      table.periodStart
+    ),
+    periodWorkSummaryPeriodIdx: index("idx_period_work_summary_period").on(
+      table.periodType,
+      table.periodStart
+    ),
+  })
+);

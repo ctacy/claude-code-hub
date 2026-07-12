@@ -1,1 +1,15 @@
+#!/bin/sh
+# Guard: prevent accidental deletion of upstream migration files (idx 0-9999)
+deleted_migrations=$(git diff --cached --name-only --diff-filter=D | grep -E '^drizzle/([0-9]{4})_.*\.sql$' | awk -F'/' '{n=substr($2,1,4)+0; if(n<10000) print}' || true)
+if [ -n "$deleted_migrations" ]; then
+  echo ""
+  echo "ERROR: Upstream migration files (idx 0-9999) are staged for deletion:"
+  echo "$deleted_migrations"
+  echo ""
+  echo "This usually means 'bun run db:generate' regenerated the journal incorrectly."
+  echo "Restore with: git restore --source=HEAD -- <file>"
+  echo ""
+  exit 1
+fi
+
 bunx lint-staged

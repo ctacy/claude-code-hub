@@ -56,9 +56,10 @@ cd dev && make db         # Start only database services
 
 1. **Modify schema** - Edit `src/drizzle/schema.ts`
 2. **Generate migration** - Run `bun run db:generate`
-3. **Review generated SQL** - Check the generated file in `drizzle/` directory
-4. **Edit if necessary** - Make any required adjustments to the generated SQL
-5. **Apply migration** - Run `bun run db:migrate` or let `AUTO_MIGRATE=true` handle it on startup
+3. **Verify journal integrity** - Run `git diff drizzle/meta/_journal.json` and confirm **no upstream migration files (idx 0–9999) were deleted**. If any `drizzle/0[0-9]{3}_*.sql` files appear as deleted, restore them immediately with `git restore --source=HEAD -- <file>` and re-insert their journal entries manually.
+4. **Review generated SQL** - Check the generated file in `drizzle/` directory
+5. **Edit if necessary** - Make any required adjustments to the generated SQL
+6. **Apply migration** - Run `bun run db:migrate` or let `AUTO_MIGRATE=true` handle it on startup
 
 ```bash
 bun run db:generate       # Generate Drizzle migrations from schema changes

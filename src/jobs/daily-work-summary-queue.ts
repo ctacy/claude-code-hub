@@ -67,7 +67,7 @@ function getDailySummaryQueue(): Queue.Queue {
 }
 
 function setupQueueProcessor(queue: Queue.Queue): void {
-  queue.process(async (job: Job) => {
+  queue.process("daily-work-summary", async (job: Job) => {
     logger.info({ action: "daily_summary_job_start", jobId: job.id });
     const result = await runDailyWorkSummary();
     logger.info({ action: "daily_summary_job_complete", jobId: job.id, ...result });

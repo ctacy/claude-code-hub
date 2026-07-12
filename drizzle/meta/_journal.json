@@ -806,6 +806,13 @@
       "when": 1783732969809,
       "tag": "10005_soft_newton_destine",
       "breakpoints": true
+    },
+    {
+      "idx": 10006,
+      "version": "7",
+      "when": 1783821334984,
+      "tag": "10006_rainy_silverclaw",
+      "breakpoints": true
     }
   ]
 }
