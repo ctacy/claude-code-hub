@@ -1,5 +1,6 @@
-// AI Accept 2026-07-12 main v1
+// AI Accept 2026-07-12 main v3
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   listAllUsersWithSummaryByDate,
@@ -22,11 +23,17 @@ export default async function PortalSummariesPage({
   searchParams: Promise<{ date?: string; period?: string; periodStart?: string }>;
 }) {
   const { date, period, periodStart } = await searchParams;
-  const dateValid = date && /^\d{4}-\d{2}-\d{2}$/.test(date);
 
   const currentPeriod: PeriodType = ["day", "week", "month", "year"].includes(period ?? "")
     ? (period as PeriodType)
     : "day";
+  // 日模式下优先使用 periodStart（新 toolbar 命名），其次兼容旧的 date 参数
+  const effectiveDate =
+    currentPeriod === "day"
+      ? ((periodStart && /^\d{4}-\d{2}-\d{2}$/.test(periodStart) ? periodStart : undefined) ??
+        (date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined))
+      : undefined;
+  const dateValid = !!effectiveDate;
   const periodStartValid = periodStart && /^\d{4}-\d{2}-\d{2}$/.test(periodStart);
 
   let rows: Array<{
@@ -40,9 +47,21 @@ export default async function PortalSummariesPage({
   }> = [];
 
   if (currentPeriod === "day") {
-    rows = dateValid
-      ? await listAllUsersWithSummaryByDate(date)
-      : await listLatestSummariesPerUser();
+    if (dateValid) {
+      rows = await listAllUsersWithSummaryByDate(effectiveDate!);
+    } else {
+      // 默认入口：跳到库里"最近有数据的日"，与 toolbar 今日显示对齐
+      const latest = await listLatestSummariesPerUser();
+      const fallbackDate = latest
+        .map((r) => r.date)
+        .filter((d): d is string => !!d)
+        .sort()
+        .pop();
+      if (fallbackDate) {
+        redirect(`/portal/summaries?period=day&periodStart=${fallbackDate}`);
+      }
+      rows = latest;
+    }
   } else if (periodStartValid) {
     const periodRows = await listPeriodSummariesByPeriod(
       currentPeriod as "week" | "month" | "year",
@@ -79,7 +98,7 @@ export default async function PortalSummariesPage({
         <h1 className="text-2xl font-bold tracking-tight">按用户工作总结</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {showDate && dateValid
-            ? `展示 ${date} 当天所有用户的总结。`
+            ? `展示 ${effectiveDate} 当天所有用户的总结。`
             : showDate
               ? "每日凌晨自动生成，可按日期筛选或手动重新汇总。"
               : `展示 ${currentPeriod === "week" ? "每周" : currentPeriod === "month" ? "每月" : "每年"} 汇总总结。`}
@@ -92,7 +111,7 @@ export default async function PortalSummariesPage({
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             {showDate && dateValid
-              ? `${date} 暂无总结数据，可点击「重新汇总」立即生成。`
+              ? `${effectiveDate} 暂无总结数据，可点击「重新汇总」立即生成。`
               : "暂无总结数据。请确认 ENABLE_IO_BODY_LOGGING 已开启，且定时任务已运行过至少一次。"}
           </CardContent>
         </Card>

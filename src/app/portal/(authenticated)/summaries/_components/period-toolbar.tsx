@@ -180,17 +180,21 @@ export function PeriodToolbar() {
   }
 
   async function triggerSummary() {
-    if (currentPeriod === "day") {
-      return;
-    }
     setLoading(true);
     setJob(null);
     try {
-      const res = await fetch("/api/portal/summaries/period-trigger", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ periodType: currentPeriod, periodStart: currentPeriodStart }),
-      });
+      const res =
+        currentPeriod === "day"
+          ? await fetch("/api/portal/summaries/trigger", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ date: currentPeriodStart }),
+            })
+          : await fetch("/api/portal/summaries/period-trigger", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ periodType: currentPeriod, periodStart: currentPeriodStart }),
+            });
       const data = await res.json();
       if (!res.ok) {
         setJob({
@@ -268,19 +272,17 @@ export function PeriodToolbar() {
           </Button>
         </div>
         <div className="flex-1" />
-        {currentPeriod !== "day" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={triggerSummary}
-            disabled={loading || job?.status === "running"}
-          >
-            <RefreshCw
-              className={`h-4 w-4 mr-1.5 ${job?.status === "running" ? "animate-spin" : ""}`}
-            />
-            重新汇总
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={triggerSummary}
+          disabled={loading || job?.status === "running"}
+        >
+          <RefreshCw
+            className={`h-4 w-4 mr-1.5 ${job?.status === "running" ? "animate-spin" : ""}`}
+          />
+          重新汇总
+        </Button>
       </div>
       {resultText && (
         <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-sans">
