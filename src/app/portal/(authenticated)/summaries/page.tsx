@@ -136,18 +136,8 @@ export default async function PortalSummariesPage({
           </div>
           {rows.map((row) => {
             const hasData = row.requestCount !== null;
-            const linkHref =
-              showDate && hasData && row.date
-                ? `/portal/summaries/${encodeURIComponent(row.userName)}/${row.date}`
-                : "#";
-            return (
-              <Link
-                key={`${row.userName}-${row.date ?? row.periodStart ?? ""}`}
-                href={linkHref}
-                className={`flex items-start min-h-11 text-sm border-b border-border/40 last:border-b-0 transition-colors ${
-                  hasData && showDate && row.date ? "hover:bg-accent/50" : "pointer-events-none"
-                }`}
-              >
+            const inner = (
+              <>
                 <div className="w-32 pl-3 py-2 shrink-0 truncate">{row.userName}</div>
                 {showDate && (
                   <>
@@ -181,6 +171,32 @@ export default async function PortalSummariesPage({
                     "暂无数据"
                   )}
                 </div>
+              </>
+            );
+
+            const rowClass =
+              "flex items-start min-h-11 text-sm border-b border-border/40 last:border-b-0";
+            if (showPeriod) {
+              return (
+                <div key={`${row.userName}-${row.periodStart ?? ""}`} className={rowClass}>
+                  {inner}
+                </div>
+              );
+            }
+
+            const linkHref =
+              hasData && row.date
+                ? `/portal/summaries/${encodeURIComponent(row.userName)}/${row.date}`
+                : "#";
+            return (
+              <Link
+                key={`${row.userName}-${row.date ?? ""}`}
+                href={linkHref}
+                className={`${rowClass} transition-colors ${
+                  hasData && row.date ? "hover:bg-accent/50" : "pointer-events-none"
+                }`}
+              >
+                {inner}
               </Link>
             );
           })}
