@@ -440,6 +440,16 @@ export async function register() {
         });
       }
 
+      // 初始化周期工作总结定时任务（周/月/年）
+      try {
+        const { schedulePeriodWorkSummary } = await import("@/jobs/period-work-summary-queue");
+        await schedulePeriodWorkSummary();
+      } catch (error) {
+        logger.warn("[Instrumentation] Failed to schedule period work summary job", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+
       // 初始化智能探测调度器（如果启用）
       const { startProbeScheduler, isSmartProbingEnabled } = await import(
         "@/lib/circuit-breaker-probe"

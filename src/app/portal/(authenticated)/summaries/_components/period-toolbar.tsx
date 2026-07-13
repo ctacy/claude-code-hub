@@ -152,13 +152,12 @@ export function PeriodToolbar() {
   }
 
   async function pollJob(jobId: string) {
+    const pollUrl =
+      currentPeriod === "day"
+        ? `/api/portal/summaries/trigger?jobId=${encodeURIComponent(jobId)}`
+        : `/api/portal/summaries/period-trigger?jobId=${encodeURIComponent(jobId)}`;
     try {
-      const res = await fetch(
-        `/api/portal/summaries/period-trigger?jobId=${encodeURIComponent(jobId)}`,
-        {
-          cache: "no-store",
-        }
-      );
+      const res = await fetch(pollUrl, { cache: "no-store" });
       const data = (await res.json()) as JobState;
       setJob(data);
       if (data.status === "done") {

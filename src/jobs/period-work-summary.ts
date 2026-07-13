@@ -10,7 +10,6 @@ import { logger } from "@/lib/logger";
 import { resolveSystemTimezone } from "@/lib/utils/timezone";
 import { getDailySummaryGroups } from "@/repository/daily-summary-groups";
 import { upsertPeriodWorkSummary } from "@/repository/period-work-summary";
-import { getSystemSettings } from "@/repository/system-config";
 
 function formatLlmError(error: InternalLlmError): string {
   switch (error.reason) {
@@ -115,8 +114,8 @@ export async function runPeriodWorkSummary(options: {
 
   logger.info("[PeriodWorkSummary] Starting", { periodType, periodStart, start, end, timezone });
 
-  const settings = await getSystemSettings().catch(() => null);
-  const promptTemplate = settings?.dailySummaryPrompt ?? null;
+  // 周期汇总使用独立的默认提示词，不复用日报提示词（两者占位符不同）
+  const promptTemplate = null;
 
   const configuredGroups = await getDailySummaryGroups().catch(() => []);
   const activeGroups = configuredGroups.filter((g) => g.enabled);

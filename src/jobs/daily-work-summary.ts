@@ -39,7 +39,7 @@ export const DEFAULT_SUMMARY_PROMPT = `你是一个工作内容分析师。
 
 {logsText}
 
-请分析这位用户当天的工作内容，以 JSON 格式返回：
+请分析这位用户 {date} 的工作内容，以 JSON 格式返回：
 {
   "tags": {
     "debugging": <int, 调试/排查问题相关请求数>,
