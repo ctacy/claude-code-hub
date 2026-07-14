@@ -91,6 +91,24 @@ export async function upsertPeriodWorkSummary(params: {
     });
 }
 
+export async function getPeriodSummary(
+  userName: string,
+  periodType: "week" | "month" | "year",
+  periodStart: string
+): Promise<PeriodSummaryRow | null> {
+  const [row] = await db
+    .select()
+    .from(periodWorkSummary)
+    .where(
+      and(
+        eq(periodWorkSummary.userName, userName),
+        eq(periodWorkSummary.periodType, periodType),
+        eq(periodWorkSummary.periodStart, periodStart)
+      )
+    );
+  return (row as PeriodSummaryRow) ?? null;
+}
+
 export async function listPeriodSummariesByPeriod(
   periodType: "week" | "month" | "year",
   periodStart: string

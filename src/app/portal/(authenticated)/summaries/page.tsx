@@ -10,6 +10,8 @@ import {
   listLatestPeriodSummariesPerUser,
   listPeriodSummariesByPeriod,
 } from "@/repository/period-work-summary";
+import { CopySummaryButton } from "./_components/copy-summary-button";
+import { ExportSummariesButton } from "./_components/export-summaries-button";
 import { PeriodToolbar } from "./_components/period-toolbar";
 import { SummaryCell } from "./_components/summary-cell";
 
@@ -105,7 +107,13 @@ export default async function PortalSummariesPage({
         </p>
       </div>
 
-      <PeriodToolbar />
+      <div className="flex items-center justify-between gap-3">
+        <PeriodToolbar />
+        <ExportSummariesButton
+          period={currentPeriod}
+          periodStart={showPeriod ? periodStart : effectiveDate}
+        />
+      </div>
 
       {rows.length === 0 ? (
         <Card>
@@ -132,7 +140,8 @@ export default async function PortalSummariesPage({
                 <div className="w-24 px-3 shrink-0">请求数</div>
               </>
             )}
-            <div className="flex-1 px-3 pr-3">工作总结</div>
+            <div className="flex-1 px-3">工作总结</div>
+            <div className="w-10 shrink-0" />
           </div>
           {rows.map((row) => {
             const hasData = row.requestCount !== null;
@@ -162,7 +171,7 @@ export default async function PortalSummariesPage({
                     </div>
                   </>
                 )}
-                <div className="flex-1 px-3 pr-3 py-2 text-xs text-muted-foreground">
+                <div className="flex-1 px-3 py-2 text-xs text-muted-foreground">
                   {hasData && row.summaryText ? (
                     <SummaryCell text={row.summaryText} />
                   ) : showDate ? (
@@ -176,10 +185,31 @@ export default async function PortalSummariesPage({
 
             const rowClass =
               "flex items-start min-h-11 text-sm border-b border-border/40 last:border-b-0";
+            const copyCell = (
+              <div className="w-10 shrink-0 py-2 flex justify-center">
+                {hasData && row.summaryText && <CopySummaryButton text={row.summaryText} />}
+              </div>
+            );
+
             if (showPeriod) {
+              const linkHref =
+                hasData && row.periodStart
+                  ? `/portal/summaries/period/${currentPeriod}/${row.periodStart}/${encodeURIComponent(row.userName)}`
+                  : "#";
               return (
-                <div key={`${row.userName}-${row.periodStart ?? ""}`} className={rowClass}>
-                  {inner}
+                <div
+                  key={`${row.userName}-${row.periodStart ?? ""}`}
+                  className={`${rowClass} transition-colors ${hasData && row.periodStart ? "hover:bg-accent/50" : ""}`}
+                >
+                  <Link
+                    href={linkHref}
+                    className={`flex flex-1 items-start ${
+                      hasData && row.periodStart ? "" : "pointer-events-none"
+                    }`}
+                  >
+                    {inner}
+                  </Link>
+                  {copyCell}
                 </div>
               );
             }
@@ -189,15 +219,20 @@ export default async function PortalSummariesPage({
                 ? `/portal/summaries/${encodeURIComponent(row.userName)}/${row.date}`
                 : "#";
             return (
-              <Link
+              <div
                 key={`${row.userName}-${row.date ?? ""}`}
-                href={linkHref}
-                className={`${rowClass} transition-colors ${
-                  hasData && row.date ? "hover:bg-accent/50" : "pointer-events-none"
-                }`}
+                className={`${rowClass} transition-colors ${hasData && row.date ? "hover:bg-accent/50" : ""}`}
               >
-                {inner}
-              </Link>
+                <Link
+                  href={linkHref}
+                  className={`flex flex-1 items-start ${
+                    hasData && row.date ? "" : "pointer-events-none"
+                  }`}
+                >
+                  {inner}
+                </Link>
+                {copyCell}
+              </div>
             );
           })}
         </div>
