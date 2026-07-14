@@ -1,3 +1,4 @@
+// AI Accept 2026-07-14 main v3
 import {
   findAllTimeLeaderboard,
   findCustomRangeLeaderboard,
@@ -5,31 +6,12 @@ import {
   findMonthlyLeaderboard,
   findWeeklyLeaderboard,
 } from "@/repository/leaderboard";
+import { CostLeaderboardTable } from "./_components/cost-leaderboard-table";
 import { CostPeriodBar } from "./_components/cost-period-bar";
 
 export const dynamic = "force-dynamic";
 
 type Period = "daily" | "weekly" | "monthly" | "allTime" | "custom";
-
-function formatCost(usd: number): string {
-  if (usd === 0) return "$0.0000";
-  if (usd < 0.0001) return `$${usd.toExponential(2)}`;
-  return `$${usd.toFixed(4)}`;
-}
-
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
-
-const PERIOD_LABEL: Record<Period, string> = {
-  daily: "今日",
-  weekly: "本周",
-  monthly: "本月",
-  allTime: "全部",
-  custom: "自定义",
-};
 
 function isValidDateStr(s: string | undefined): s is string {
   return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -52,20 +34,33 @@ export default async function PortalCostPage({
   const rows = await (() => {
     switch (currentPeriod) {
       case "weekly":
-        return findWeeklyLeaderboard();
+        return findWeeklyLeaderboard(undefined, true);
       case "monthly":
-        return findMonthlyLeaderboard();
+        return findMonthlyLeaderboard(undefined, true);
       case "allTime":
-        return findAllTimeLeaderboard();
+        return findAllTimeLeaderboard(undefined, true);
       case "custom":
-        return findCustomRangeLeaderboard({ startDate: startDate!, endDate: endDate! });
+        return findCustomRangeLeaderboard(
+          { startDate: startDate!, endDate: endDate! },
+          undefined,
+          true
+        );
       default:
-        return findDailyLeaderboard();
+        return findDailyLeaderboard(undefined, true);
     }
   })();
 
   const periodLabel =
-    currentPeriod === "custom" ? `${startDate} ~ ${endDate}` : PERIOD_LABEL[currentPeriod];
+    currentPeriod === "custom"
+      ? `${startDate} ~ ${endDate}`
+      : (
+          {
+            daily: "今日",
+            weekly: "本周",
+            monthly: "本月",
+            allTime: "全部",
+          } as Record<Exclude<Period, "custom">, string>
+        )[currentPeriod];
 
   return (
     <div className="space-y-4">
@@ -78,41 +73,7 @@ export default async function PortalCostPage({
 
       <CostPeriodBar />
 
-      {rows.length === 0 ? (
-        <div className="rounded-md border px-4 py-8 text-center text-sm text-muted-foreground">
-          {PERIOD_LABEL[currentPeriod]}暂无消耗数据。
-        </div>
-      ) : (
-        <div className="rounded-md border">
-          <div className="bg-muted/30 border-b flex items-center h-9 text-xs font-medium text-muted-foreground/80">
-            <div className="w-10 pl-3 shrink-0 text-right">#</div>
-            <div className="flex-1 px-3">用户</div>
-            <div className="w-28 px-3 shrink-0 text-right">请求数</div>
-            <div className="w-28 px-3 shrink-0 text-right">Token 用量</div>
-            <div className="w-32 px-3 pr-4 shrink-0 text-right">消耗（USD）</div>
-          </div>
-          {rows.map((row, idx) => (
-            <div
-              key={row.userId}
-              className="flex items-center h-10 text-sm border-b border-border/40 last:border-b-0 hover:bg-muted/20"
-            >
-              <div className="w-10 pl-3 shrink-0 text-right text-muted-foreground text-xs">
-                {idx + 1}
-              </div>
-              <div className="flex-1 px-3 truncate">{row.userName}</div>
-              <div className="w-28 px-3 shrink-0 text-right text-muted-foreground">
-                {row.totalRequests.toLocaleString()}
-              </div>
-              <div className="w-28 px-3 shrink-0 text-right text-muted-foreground font-mono text-xs">
-                {formatTokens(row.totalTokens)}
-              </div>
-              <div className="w-32 px-3 pr-4 shrink-0 text-right font-mono font-semibold">
-                {formatCost(row.totalCost)}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <CostLeaderboardTable rows={rows} periodLabel={periodLabel} />
     </div>
   );
 }
