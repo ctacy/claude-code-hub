@@ -3,6 +3,7 @@ import { endOfMonth, endOfWeek, endOfYear, format, parseISO } from "date-fns";
 import { and, gte, lt, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { dailyWorkSummary } from "@/drizzle/portal-schema";
+import { DEFAULT_SUMMARY_PROMPT, SUMMARY_CHAR_LIMITS } from "@/jobs/daily-work-summary";
 import type { InternalLlmError } from "@/lib/internal-llm/call";
 import { callInternalLlmForSummary } from "@/lib/internal-llm/call";
 import { pickInternalLlmProvider } from "@/lib/internal-llm/pick-provider";
@@ -10,6 +11,7 @@ import { logger } from "@/lib/logger";
 import { resolveSystemTimezone } from "@/lib/utils/timezone";
 import { getDailySummaryGroups } from "@/repository/daily-summary-groups";
 import { upsertPeriodWorkSummary } from "@/repository/period-work-summary";
+import { getSystemSettings } from "@/repository/system-config";
 
 function formatLlmError(error: InternalLlmError): string {
   switch (error.reason) {
@@ -27,29 +29,6 @@ function formatLlmError(error: InternalLlmError): string {
       return `unknown: ${JSON.stringify(error)}`.slice(0, 150);
   }
 }
-
-export const DEFAULT_PERIOD_PROMPT = `你是一个工作内容分析师。
-以下是用户 "{userName}" 在{period}内的 {dayCount} 天工作总结：
-
-{dailySummaries}
-
-请分析这位用户在该时间段的工作内容，以 JSON 格式返回：
-{
-  "tags": {
-    "debugging": <int, 调试/排查问题相关请求数>,
-    "documentation": <int, 写文档/注释/说明相关请求数>,
-    "code_gen": <int, 代码生成/实现功能相关请求数>,
-    "refactor": <int, 重构/优化代码相关请求数>,
-    "testing": <int, 测试/写测试用例相关请求数>,
-    "other": <int, 以上无法归类的请求数>
-  },
-  "summary": "<{charLimit}字以内自然语言总结，主语用'该用户'，包含主要工作主题、产出和关键成果>"
-}
-注意：
-- tags 各项之和不需要严格等于总请求数，按实际分类估算即可
-- summary 应综合该时间段的工作趋势和重点成果，不要仅列举日期
-- 如果存在多项工作，那就分点列出并换行显示
-- 只输出 JSON，不要有任何其他文字`;
 
 export interface PeriodRunResult {
   dateStr: string;
@@ -86,25 +65,32 @@ function computePeriodBounds(
   };
 }
 
-// AI Accept 2026-07-12 main v2
+// AI Accept 2026-07-14 main v3
+// 与日报共用 DEFAULT_SUMMARY_PROMPT（daily-work-summary.ts），按周期语义映射占位符。
+// {requestCount} 替换值须自带完整量词短语（模板不再拼接"条"/"天"等字样，避免病句）：
+//   {date}         "本周/本月/本年（起始日 ~ 结束日）"
+//   {requestCount} "N 天工作总结"（含完整量词短语）
+//   {logsText}     每日总结拼接文本
+//   {charLimit}    与日报（500字）梯度衔接：周 1000 / 月 1500 / 年 2000
 function buildPrompt(
   userName: string,
   periodType: "week" | "month" | "year",
-  _periodStart: string,
+  periodStart: string,
+  periodEnd: string,
   dayCount: number,
   dailySummaries: Array<{ date: string; summary: string }>,
   template?: string | null
 ): string {
   const periodLabel = { week: "本周", month: "本月", year: "本年" }[periodType];
-  // 与日报（500字）梯度衔接：周 1000 / 月 1500 / 年 2000，颗粒度越粗字越多
-  const charLimit = { week: 1000, month: 1500, year: 2000 }[periodType];
+  const charLimit = SUMMARY_CHAR_LIMITS[periodType];
+  const dateLabel = `${periodLabel}（${periodStart} ~ ${periodEnd}）`;
   const summariesText = dailySummaries.map((d) => `【${d.date}】${d.summary}`).join("\n");
 
-  return (template || DEFAULT_PERIOD_PROMPT)
+  return (template || DEFAULT_SUMMARY_PROMPT)
     .replace(/\{userName\}/g, userName)
-    .replace(/\{period\}/g, periodLabel)
-    .replace(/\{dayCount\}/g, String(dayCount))
-    .replace(/\{dailySummaries\}/g, summariesText)
+    .replace(/\{date\}/g, dateLabel)
+    .replace(/\{requestCount\}/g, `${dayCount} 天工作总结`)
+    .replace(/\{logsText\}/g, summariesText)
     .replace(/\{charLimit\}/g, String(charLimit));
 }
 
@@ -118,8 +104,9 @@ export async function runPeriodWorkSummary(options: {
 
   logger.info("[PeriodWorkSummary] Starting", { periodType, periodStart, start, end, timezone });
 
-  // 周期汇总使用独立的默认提示词，不复用日报提示词（两者占位符不同）
-  const promptTemplate = null;
+  // 与日报共用同一份用户自定义提示词（system_settings.dailySummaryPrompt）
+  const settings = await getSystemSettings().catch(() => null);
+  const promptTemplate = settings?.dailySummaryPrompt ?? null;
 
   const configuredGroups = await getDailySummaryGroups().catch(() => []);
   const activeGroups = configuredGroups.filter((g) => g.enabled);
@@ -196,7 +183,8 @@ export async function runPeriodWorkSummary(options: {
           const prompt = buildPrompt(
             userName,
             periodType,
-            periodStart,
+            start,
+            end,
             dayCount,
             dailySummaries,
             promptTemplate

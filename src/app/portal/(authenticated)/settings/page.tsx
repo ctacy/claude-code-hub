@@ -361,11 +361,16 @@ export default function PortalSettingsPage() {
             可用变量：<code className="bg-muted px-1 rounded">{"{userName}"}</code>{" "}
             <code className="bg-muted px-1 rounded">{"{date}"}</code>{" "}
             <code className="bg-muted px-1 rounded">{"{requestCount}"}</code>{" "}
-            <code className="bg-muted px-1 rounded">{"{logsText}"}</code>
+            <code className="bg-muted px-1 rounded">{"{logsText}"}</code>{" "}
+            <code className="bg-muted px-1 rounded">{"{charLimit}"}</code>
           </span>
         </div>
         <p className="text-xs text-muted-foreground">
-          留空则使用内置默认提示词。修改后下次汇总时生效。
+          留空则使用内置默认提示词。修改后下次汇总时生效。日/周/月/年共用同一份提示词：
+          {"{date}"}/{"{requestCount}"}/{"{logsText}"}{" "}
+          按粒度自动映射为对应语义（日报=业务日期/请求数/原始记录；
+          周期报=周期区间/覆盖天数/每日总结拼接），{"{charLimit}"} 随粒度阶梯变化（日 500 / 周 1000
+          / 月 1500 / 年 2000）。
         </p>
         <textarea
           value={prompt}

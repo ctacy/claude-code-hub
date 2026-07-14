@@ -17,6 +17,16 @@ import { getDailySummaryGroups } from "@/repository/daily-summary-groups";
 import { upsertDailyWorkSummary } from "@/repository/daily-work-summary";
 import { getSystemSettings } from "@/repository/system-config";
 
+// AI Accept 2026-07-14 main v1
+// 日/周/月/年四种粒度共用的 summary 字数梯度，避免 daily/period 两处各自硬编码导致漂移。
+// period-work-summary.ts 从此处 import 使用（周/月/年三档），日报使用 daily 档。
+export const SUMMARY_CHAR_LIMITS = {
+  daily: 500,
+  week: 1000,
+  month: 1500,
+  year: 2000,
+} as const;
+
 function formatLlmError(error: InternalLlmError): string {
   switch (error.reason) {
     case "fetch_failed":
@@ -34,12 +44,21 @@ function formatLlmError(error: InternalLlmError): string {
   }
 }
 
+// AI Accept 2026-07-14 main v2
+// 日/周/月/年四种粒度共用同一份提示词模板（daily-work-summary.ts 与 period-work-summary.ts
+// 都从 system_settings.dailySummaryPrompt 读取，未配置则回退到本默认值）。
+// 占位符含义按调用方场景自适应，且调用方需在替换值中自带量词/单位（模板本身不含"条"/"天"等字样，
+// 避免"7 天 条工作记录"之类拼接病句）：
+//   {date}         日报=业务日期；周期报="本周/本月/本年（起始日 ~ 结束日）"
+//   {requestCount} 日报="N 条工作记录"；周期报="N 天工作总结"（各自含完整量词短语）
+//   {logsText}     日报=原始请求/响应摘录；周期报=每日总结拼接文本
+//   {charLimit}    按粒度阶梯：日 500 / 周 1000 / 月 1500 / 年 2000
 export const DEFAULT_SUMMARY_PROMPT = `你是一个工作内容分析师。
-以下是用户 "{userName}" 在 {date} 的 {requestCount} 条 AI 请求记录（已截取部分内容）：
+以下是用户 "{userName}" 在 {date} 的 {requestCount}：
 
 {logsText}
 
-请分析这位用户 {date} 的工作内容，以 JSON 格式返回：
+请分析这位用户在 {date} 的工作内容，以 JSON 格式返回：
 {
   "tags": {
     "debugging": <int, 调试/排查问题相关请求数>,
@@ -49,12 +68,11 @@ export const DEFAULT_SUMMARY_PROMPT = `你是一个工作内容分析师。
     "testing": <int, 测试/写测试用例相关请求数>,
     "other": <int, 以上无法归类的请求数>
   },
-  "summary": "<自然语言总结，主语用'该用户'，包含主要工作主题、产出和关键成果>"
+  "summary": "<{charLimit}字以内自然语言总结，主语用'该用户'，包含主要工作主题、产出和关键成果>"
 }
 注意：
 - tags 各项之和不需要严格等于总请求数，按实际分类估算即可
 - summary 不要列出具体对话内容，只总结工作主题和成果
-- summary 字数约 500 字以内
 - 存在多项工作分点列出并换行显示
 - 只输出 JSON，不要有任何其他文字`;
 
@@ -123,8 +141,9 @@ function buildPrompt(
   return (template || DEFAULT_SUMMARY_PROMPT)
     .replace(/\{userName\}/g, userName)
     .replace(/\{date\}/g, date)
-    .replace(/\{requestCount\}/g, String(requestCount))
-    .replace(/\{logsText\}/g, logsText);
+    .replace(/\{requestCount\}/g, `${requestCount} 条工作记录`)
+    .replace(/\{logsText\}/g, logsText)
+    .replace(/\{charLimit\}/g, String(SUMMARY_CHAR_LIMITS.daily));
 }
 
 export async function runDailyWorkSummary(options?: { dateOverride?: string }): Promise<RunResult> {
