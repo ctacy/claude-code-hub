@@ -1,7 +1,6 @@
-// AI Accept 2026-07-14 main v6
+// AI Accept 2026-07-14 main v7
 import { format, parseISO, subMonths, subWeeks, subYears } from "date-fns";
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCurrentCurrency } from "@/lib/portal/currency-cookie";
@@ -16,11 +15,10 @@ import {
   listPeriodSummariesByPeriod,
 } from "@/repository/period-work-summary";
 import { CurrencySwitcher } from "../_components/currency-switcher";
-import { CopySummaryButton } from "./_components/copy-summary-button";
 import { ExportSummariesButton } from "./_components/export-summaries-button";
 import { PeriodComparisonCard } from "./_components/period-comparison-card";
 import { PeriodToolbar } from "./_components/period-toolbar";
-import { SummaryCell } from "./_components/summary-cell";
+import { type SummaryRow, SummaryTableClient } from "./_components/summary-table-client";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +49,6 @@ export default async function PortalSummariesPage({
   const currentPeriod: PeriodType = ["day", "week", "month", "year"].includes(period ?? "")
     ? (period as PeriodType)
     : "day";
-  // 日模式下优先使用 periodStart（新 toolbar 命名），其次兼容旧的 date 参数
   const effectiveDate =
     currentPeriod === "day"
       ? ((periodStart && /^\d{4}-\d{2}-\d{2}$/.test(periodStart) ? periodStart : undefined) ??
@@ -60,20 +57,10 @@ export default async function PortalSummariesPage({
   const dateValid = !!effectiveDate;
   const periodStartValid = periodStart && /^\d{4}-\d{2}-\d{2}$/.test(periodStart);
 
-  let rows: Array<{
-    userName: string;
-    date?: string;
-    periodStart?: string;
-    periodEnd?: string;
-    requestCount: number | null;
-    dayCount?: number;
-    summaryText?: string;
-  }> = [];
+  let rows: SummaryRow[] = [];
 
-  // 审计数据：仅日模式+指定日期时拉取，与主数据并发
   let auditMap: Map<string, AuditFlags> | null = null;
 
-  // 上一周期对比数据（仅周/月/年 + 有效 periodStart 时填充）
   let priorPeriodData: {
     priorStart: string;
     currentTotal: number;
@@ -88,10 +75,14 @@ export default async function PortalSummariesPage({
         listAllUsersWithSummaryByDate(effectiveDate!),
         auditFlagsForDate(effectiveDate!, timezone).catch(() => new Map<string, AuditFlags>()),
       ]);
-      rows = summaryRows;
+      rows = summaryRows.map((r) => ({
+        userName: r.userName,
+        date: "date" in r ? r.date : undefined,
+        requestCount: r.requestCount,
+        summaryText: "summaryText" in r ? (r.summaryText ?? undefined) : undefined,
+      }));
       auditMap = auditResult;
     } else {
-      // 默认入口：跳到库里"最近有数据的日"，与 toolbar 今日显示对齐
       const latest = await listLatestSummariesPerUser();
       const fallbackDate = latest
         .map((r) => r.date)
@@ -101,7 +92,12 @@ export default async function PortalSummariesPage({
       if (fallbackDate) {
         redirect(`/portal/summaries?period=day&periodStart=${fallbackDate}`);
       }
-      rows = latest;
+      rows = latest.map((r) => ({
+        userName: r.userName,
+        date: r.date,
+        requestCount: r.requestCount,
+        summaryText: r.summaryText,
+      }));
     }
   } else if (periodStartValid) {
     const periodType = currentPeriod as "week" | "month" | "year";
@@ -152,7 +148,7 @@ export default async function PortalSummariesPage({
             ? `展示 ${effectiveDate} 当天所有用户的总结。`
             : showDate
               ? "每日凌晨自动生成，可按日期筛选或手动重新汇总。"
-              : `展示 ${currentPeriod === "week" ? "每周" : currentPeriod === "month" ? "每月" : "每年"} 汇总总结。`}
+              : `展示 ${currentPeriod === "week" ? "每周" : currentPeriod === "month" ? "每月" : currentPeriod === "year" ? "每年" : "本周期"} 汇总总结。`}
         </p>
       </div>
 
@@ -186,149 +182,15 @@ export default async function PortalSummariesPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-md border">
-          <div className="bg-muted/30 border-b flex items-center h-9 text-xs font-medium text-muted-foreground/80">
-            <div className="w-32 pl-3 shrink-0">用户</div>
-            {showDate && (
-              <>
-                <div className="w-32 px-3 shrink-0">{dateValid ? "总结日期" : "最近总结日期"}</div>
-                <div className="w-24 px-3 shrink-0">{dateValid ? "当日请求数" : "请求数"}</div>
-                {auditMap && <div className="w-40 px-3 shrink-0">无效率</div>}
-              </>
-            )}
-            {showPeriod && (
-              <>
-                <div className="w-48 px-3 shrink-0">周期</div>
-                <div className="w-24 px-3 shrink-0">天数</div>
-                <div className="w-24 px-3 shrink-0">请求数</div>
-              </>
-            )}
-            <div className="flex-1 px-3">工作总结</div>
-            <div className="w-10 shrink-0" />
-          </div>
-          {rows.map((row) => {
-            const hasData = row.requestCount !== null;
-            const inner = (
-              <>
-                <div className="w-32 pl-3 py-2 shrink-0 truncate">{row.userName}</div>
-                {showDate && (
-                  <>
-                    <div className="w-32 px-3 py-2 shrink-0 font-mono text-xs text-muted-foreground">
-                      {row.date}
-                    </div>
-                    <div className="w-24 px-3 py-2 shrink-0 text-muted-foreground">
-                      {hasData ? row.requestCount : "—"}
-                    </div>
-                    {auditMap &&
-                      (() => {
-                        const af = auditMap.get(row.userName);
-                        if (!af || af.total === 0) {
-                          return (
-                            <div className="w-40 px-3 py-2 shrink-0 text-muted-foreground/50">
-                              —
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className="w-40 px-3 py-2 shrink-0 flex flex-wrap gap-1">
-                            {af.repeatedBlast > 0 && (
-                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
-                                重{af.repeatedBlast}
-                              </span>
-                            )}
-                            {af.emptyOutput > 0 && (
-                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400">
-                                空{af.emptyOutput}
-                              </span>
-                            )}
-                            {af.hugeInput > 0 && (
-                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
-                                巨{af.hugeInput}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
-                  </>
-                )}
-                {showPeriod && (
-                  <>
-                    <div className="w-48 px-3 py-2 shrink-0 font-mono text-xs text-muted-foreground">
-                      {row.periodStart} ~ {row.periodEnd}
-                    </div>
-                    <div className="w-24 px-3 py-2 shrink-0 text-muted-foreground">
-                      {row.dayCount ?? "—"}
-                    </div>
-                    <div className="w-24 px-3 py-2 shrink-0 text-muted-foreground">
-                      {hasData ? row.requestCount : "—"}
-                    </div>
-                  </>
-                )}
-                <div className="flex-1 px-3 py-2 text-xs text-muted-foreground">
-                  {hasData && row.summaryText ? (
-                    <SummaryCell text={row.summaryText} />
-                  ) : showDate ? (
-                    "当日无请求"
-                  ) : (
-                    "暂无数据"
-                  )}
-                </div>
-              </>
-            );
-
-            const rowClass =
-              "flex items-start min-h-11 text-sm border-b border-border/40 last:border-b-0";
-            const copyCell = (
-              <div className="w-10 shrink-0 py-2 flex justify-center">
-                {hasData && row.summaryText && <CopySummaryButton text={row.summaryText} />}
-              </div>
-            );
-
-            if (showPeriod) {
-              const linkHref =
-                hasData && row.periodStart
-                  ? `/portal/summaries/period/${currentPeriod}/${row.periodStart}/${encodeURIComponent(row.userName)}`
-                  : "#";
-              return (
-                <div
-                  key={`${row.userName}-${row.periodStart ?? ""}`}
-                  className={`${rowClass} transition-colors ${hasData && row.periodStart ? "hover:bg-accent/50" : ""}`}
-                >
-                  <Link
-                    href={linkHref}
-                    className={`flex flex-1 items-start ${
-                      hasData && row.periodStart ? "" : "pointer-events-none"
-                    }`}
-                  >
-                    {inner}
-                  </Link>
-                  {copyCell}
-                </div>
-              );
-            }
-
-            const linkHref =
-              hasData && row.date
-                ? `/portal/summaries/${encodeURIComponent(row.userName)}/${row.date}`
-                : "#";
-            return (
-              <div
-                key={`${row.userName}-${row.date ?? ""}`}
-                className={`${rowClass} transition-colors ${hasData && row.date ? "hover:bg-accent/50" : ""}`}
-              >
-                <Link
-                  href={linkHref}
-                  className={`flex flex-1 items-start ${
-                    hasData && row.date ? "" : "pointer-events-none"
-                  }`}
-                >
-                  {inner}
-                </Link>
-                {copyCell}
-              </div>
-            );
-          })}
-        </div>
+        <SummaryTableClient
+          rows={rows}
+          showDate={showDate}
+          showPeriod={showPeriod}
+          currentPeriod={currentPeriod}
+          effectiveDate={effectiveDate}
+          dateValid={dateValid}
+          auditMap={auditMap}
+        />
       )}
     </div>
   );

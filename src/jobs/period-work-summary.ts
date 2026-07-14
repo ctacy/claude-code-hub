@@ -1,6 +1,6 @@
 // AI Accept 2026-07-12 main v2
 import { endOfMonth, endOfWeek, endOfYear, format, parseISO } from "date-fns";
-import { and, gte, lt, sql } from "drizzle-orm";
+import { and, gte, inArray, lt, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { dailyWorkSummary } from "@/drizzle/portal-schema";
 import { DEFAULT_SUMMARY_PROMPT, SUMMARY_CHAR_LIMITS } from "@/jobs/daily-work-summary";
@@ -94,9 +94,12 @@ function buildPrompt(
     .replace(/\{charLimit\}/g, String(charLimit));
 }
 
+// AI Accept 2026-07-14 main v4
 export async function runPeriodWorkSummary(options: {
   periodType: "week" | "month" | "year";
   periodStart: string;
+  /** 仅处理列表内的用户名；未传或空数组表示处理全量用户 */
+  userNamesFilter?: string[];
 }): Promise<PeriodRunResult> {
   const { periodType, periodStart } = options;
   const timezone = await resolveSystemTimezone();
@@ -125,6 +128,8 @@ export async function runPeriodWorkSummary(options: {
       ? activeGroups.map((g) => ({ name: g.name, groupTag: g.groupTag, model: g.model }))
       : FALLBACK_TIERS;
 
+  const filterNames = options.userNamesFilter?.length ? options.userNamesFilter : null;
+
   const rows = await db
     .select({
       userName: dailyWorkSummary.userName,
@@ -143,7 +148,8 @@ export async function runPeriodWorkSummary(options: {
       and(
         gte(dailyWorkSummary.date, start),
         lt(dailyWorkSummary.date, sql`(${end}::date + INTERVAL '1 day')::varchar`),
-        sql`${dailyWorkSummary.requestCount} > 0`
+        sql`${dailyWorkSummary.requestCount} > 0`,
+        ...(filterNames ? [inArray(dailyWorkSummary.userName, filterNames)] : [])
       )
     );
 

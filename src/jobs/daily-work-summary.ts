@@ -5,7 +5,7 @@
  * 最后 UTC 兜底 —— 不使用进程本地时区/朴素 Date API，避免"系统设置的时区"与
  * "定时任务触发时刻/日期边界计算"之间出现错位（同一份口径也用于 daily-leaderboard 通知）。
  */
-import { and, isNotNull, sql } from "drizzle-orm";
+import { and, inArray, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { requestIoLog } from "@/drizzle/io-log-schema";
 import type { InternalLlmError } from "@/lib/internal-llm/call";
@@ -146,7 +146,12 @@ function buildPrompt(
     .replace(/\{charLimit\}/g, String(SUMMARY_CHAR_LIMITS.daily));
 }
 
-export async function runDailyWorkSummary(options?: { dateOverride?: string }): Promise<RunResult> {
+// AI Accept 2026-07-14 main v4
+export async function runDailyWorkSummary(options?: {
+  dateOverride?: string;
+  /** 仅处理列表内的用户名；未传或空数组表示处理全量用户 */
+  userNamesFilter?: string[];
+}): Promise<RunResult> {
   const timezone = await resolveSystemTimezone();
   const dateStr =
     options?.dateOverride && /^\d{4}-\d{2}-\d{2}$/.test(options.dateOverride)
@@ -178,6 +183,8 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
       ? activeGroups.map((g) => ({ name: g.name, groupTag: g.groupTag, model: g.model }))
       : FALLBACK_TIERS;
 
+  const filterNames = options?.userNamesFilter?.length ? options.userNamesFilter : null;
+
   // 拉取昨日所有有 userName 的 io-log 记录（日历日边界按系统配置时区计算，与 leaderboard 查询口径一致）
   const rows = await db
     .select({
@@ -190,7 +197,8 @@ export async function runDailyWorkSummary(options?: { dateOverride?: string }): 
       and(
         sql`${requestIoLog.createdAt} >= ${start}`,
         sql`${requestIoLog.createdAt} < ${endExclusive}`,
-        isNotNull(requestIoLog.userName)
+        isNotNull(requestIoLog.userName),
+        ...(filterNames ? [inArray(requestIoLog.userName, filterNames)] : [])
       )
     );
 
