@@ -43,11 +43,12 @@ export const DEFAULT_PERIOD_PROMPT = `你是一个工作内容分析师。
     "testing": <int, 测试/写测试用例相关请求数>,
     "other": <int, 以上无法归类的请求数>
   },
-  "summary": "<200字以内自然语言总结，主语用'该用户'，包含主要工作主题、产出和关键成果>"
+  "summary": "<{charLimit}字以内自然语言总结，主语用'该用户'，包含主要工作主题、产出和关键成果>"
 }
 注意：
 - tags 各项之和不需要严格等于总请求数，按实际分类估算即可
 - summary 应综合该时间段的工作趋势和重点成果，不要仅列举日期
+- 如果存在多项工作，那就分点列出并换行显示
 - 只输出 JSON，不要有任何其他文字`;
 
 export interface PeriodRunResult {
@@ -95,13 +96,16 @@ function buildPrompt(
   template?: string | null
 ): string {
   const periodLabel = { week: "本周", month: "本月", year: "本年" }[periodType];
+  // 与日报（500字）梯度衔接：周 1000 / 月 1500 / 年 2000，颗粒度越粗字越多
+  const charLimit = { week: 1000, month: 1500, year: 2000 }[periodType];
   const summariesText = dailySummaries.map((d) => `【${d.date}】${d.summary}`).join("\n");
 
   return (template || DEFAULT_PERIOD_PROMPT)
     .replace(/\{userName\}/g, userName)
     .replace(/\{period\}/g, periodLabel)
     .replace(/\{dayCount\}/g, String(dayCount))
-    .replace(/\{dailySummaries\}/g, summariesText);
+    .replace(/\{dailySummaries\}/g, summariesText)
+    .replace(/\{charLimit\}/g, String(charLimit));
 }
 
 export async function runPeriodWorkSummary(options: {
