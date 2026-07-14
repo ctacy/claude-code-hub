@@ -1,4 +1,4 @@
-// AI Accept 2026-07-12 main v1
+// AI Accept 2026-07-14 main v2
 "use client";
 
 import {
@@ -15,10 +15,12 @@ import {
   startOfWeek,
   startOfYear,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type PeriodType = "day" | "week" | "month" | "year";
 
@@ -117,6 +119,7 @@ export function PeriodToolbar() {
 
   const [job, setJob] = useState<JobState | null>(null);
   const [loading, setLoading] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(
@@ -142,6 +145,13 @@ export function PeriodToolbar() {
   function handleNav(direction: 1 | -1) {
     const newStart = shiftPeriod(currentPeriod as PeriodType, currentPeriodStart, direction);
     applyPeriod(currentPeriod as PeriodType, newStart);
+  }
+
+  function handleDateSelect(date: Date | undefined) {
+    if (!date) return;
+    const newBounds = getPeriodBounds(currentPeriod as PeriodType, date);
+    applyPeriod(currentPeriod as PeriodType, newBounds.start);
+    setCalendarOpen(false);
   }
 
   function stopPolling() {
@@ -265,7 +275,27 @@ export function PeriodToolbar() {
           <Button variant="ghost" size="sm" onClick={() => handleNav(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm text-muted-foreground min-w-48 text-center">{bounds.label}</span>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-w-48 justify-center font-normal text-muted-foreground"
+              >
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {bounds.label}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                defaultMonth={parseISO(currentPeriodStart)}
+                selected={parseISO(currentPeriodStart)}
+                onSelect={handleDateSelect}
+                disabled={{ after: today }}
+              />
+            </PopoverContent>
+          </Popover>
           <Button variant="ghost" size="sm" onClick={() => handleNav(1)}>
             <ChevronRight className="h-4 w-4" />
           </Button>
