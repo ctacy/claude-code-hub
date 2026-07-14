@@ -46,6 +46,18 @@ describe("PriceList: UI 需求覆盖", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     document.body.innerHTML = "";
+    // Suppress console output to prevent EnvironmentTeardownError:
+    // React renders inside act() may emit console.log/warn/error while the
+    // Vitest worker RPC channel is closing, causing "Closing rpc while
+    // onUserConsoleLog was pending". Mocking keeps logs local and avoids
+    // the race.
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   test("应移除提供商列，并新增合并价格列与缓存列", () => {
