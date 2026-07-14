@@ -1,17 +1,24 @@
-// AI Accept 2026-07-12 main v3
+// AI Accept 2026-07-14 main v6
+import { format, parseISO, subMonths, subWeeks, subYears } from "date-fns";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
+import { getCurrentCurrency } from "@/lib/portal/currency-cookie";
+import { resolveSystemTimezone } from "@/lib/utils/timezone";
 import {
   listAllUsersWithSummaryByDate,
   listLatestSummariesPerUser,
 } from "@/repository/daily-work-summary";
+import { type AuditFlags, auditFlagsForDate } from "@/repository/io-log-audit";
 import {
   listLatestPeriodSummariesPerUser,
   listPeriodSummariesByPeriod,
 } from "@/repository/period-work-summary";
+import { CurrencySwitcher } from "../_components/currency-switcher";
 import { CopySummaryButton } from "./_components/copy-summary-button";
 import { ExportSummariesButton } from "./_components/export-summaries-button";
+import { PeriodComparisonCard } from "./_components/period-comparison-card";
 import { PeriodToolbar } from "./_components/period-toolbar";
 import { SummaryCell } from "./_components/summary-cell";
 
@@ -19,12 +26,27 @@ export const dynamic = "force-dynamic";
 
 type PeriodType = "day" | "week" | "month" | "year";
 
+/** 计算上一周期的 periodStart（YYYY-MM-DD） */
+function getPriorPeriodStart(type: "week" | "month" | "year", periodStart: string): string {
+  const d = parseISO(periodStart);
+  switch (type) {
+    case "week":
+      return format(subWeeks(d, 1), "yyyy-MM-dd");
+    case "month":
+      return format(subMonths(d, 1), "yyyy-MM-dd");
+    case "year":
+      return format(subYears(d, 1), "yyyy-MM-dd");
+  }
+}
+
 export default async function PortalSummariesPage({
   searchParams,
 }: {
   searchParams: Promise<{ date?: string; period?: string; periodStart?: string }>;
 }) {
   const { date, period, periodStart } = await searchParams;
+  const cookieStore = await cookies();
+  const currency = getCurrentCurrency(cookieStore);
 
   const currentPeriod: PeriodType = ["day", "week", "month", "year"].includes(period ?? "")
     ? (period as PeriodType)
@@ -48,9 +70,26 @@ export default async function PortalSummariesPage({
     summaryText?: string;
   }> = [];
 
+  // 审计数据：仅日模式+指定日期时拉取，与主数据并发
+  let auditMap: Map<string, AuditFlags> | null = null;
+
+  // 上一周期对比数据（仅周/月/年 + 有效 periodStart 时填充）
+  let priorPeriodData: {
+    priorStart: string;
+    currentTotal: number;
+    priorTotal: number;
+    delta: number | null;
+  } | null = null;
+
   if (currentPeriod === "day") {
     if (dateValid) {
-      rows = await listAllUsersWithSummaryByDate(effectiveDate!);
+      const timezone = await resolveSystemTimezone();
+      const [summaryRows, auditResult] = await Promise.all([
+        listAllUsersWithSummaryByDate(effectiveDate!),
+        auditFlagsForDate(effectiveDate!, timezone).catch(() => new Map<string, AuditFlags>()),
+      ]);
+      rows = summaryRows;
+      auditMap = auditResult;
     } else {
       // 默认入口：跳到库里"最近有数据的日"，与 toolbar 今日显示对齐
       const latest = await listLatestSummariesPerUser();
@@ -65,10 +104,12 @@ export default async function PortalSummariesPage({
       rows = latest;
     }
   } else if (periodStartValid) {
-    const periodRows = await listPeriodSummariesByPeriod(
-      currentPeriod as "week" | "month" | "year",
-      periodStart
-    );
+    const periodType = currentPeriod as "week" | "month" | "year";
+    const priorStart = getPriorPeriodStart(periodType, periodStart);
+    const [periodRows, priorRows] = await Promise.all([
+      listPeriodSummariesByPeriod(periodType, periodStart),
+      listPeriodSummariesByPeriod(periodType, priorStart),
+    ]);
     rows = periodRows.map((r) => ({
       userName: r.userName,
       periodStart: r.periodStart,
@@ -77,6 +118,14 @@ export default async function PortalSummariesPage({
       dayCount: r.dayCount,
       summaryText: r.summaryText ?? undefined,
     }));
+    const currentTotal = periodRows.reduce((s, r) => s + (r.requestCount ?? 0), 0);
+    const priorTotal = priorRows.reduce((s, r) => s + (r.requestCount ?? 0), 0);
+    priorPeriodData = {
+      priorStart,
+      currentTotal,
+      priorTotal,
+      delta: priorTotal > 0 ? ((currentTotal - priorTotal) / priorTotal) * 100 : null,
+    };
   } else {
     const periodRows = await listLatestPeriodSummariesPerUser(
       currentPeriod as "week" | "month" | "year"
@@ -109,11 +158,24 @@ export default async function PortalSummariesPage({
 
       <div className="flex items-center justify-between gap-3">
         <PeriodToolbar />
-        <ExportSummariesButton
-          period={currentPeriod}
-          periodStart={showPeriod ? periodStart : effectiveDate}
-        />
+        <div className="flex items-center gap-2">
+          <CurrencySwitcher currentCurrency={currency} />
+          <ExportSummariesButton
+            period={currentPeriod}
+            periodStart={showPeriod ? periodStart : effectiveDate}
+          />
+        </div>
       </div>
+
+      {showPeriod && priorPeriodData && (
+        <PeriodComparisonCard
+          periodType={currentPeriod as "week" | "month" | "year"}
+          currentTotal={priorPeriodData.currentTotal}
+          priorTotal={priorPeriodData.priorTotal}
+          delta={priorPeriodData.delta}
+          priorPeriodStart={priorPeriodData.priorStart}
+        />
+      )}
 
       {rows.length === 0 ? (
         <Card>
@@ -131,6 +193,7 @@ export default async function PortalSummariesPage({
               <>
                 <div className="w-32 px-3 shrink-0">{dateValid ? "总结日期" : "最近总结日期"}</div>
                 <div className="w-24 px-3 shrink-0">{dateValid ? "当日请求数" : "请求数"}</div>
+                {auditMap && <div className="w-40 px-3 shrink-0">无效率</div>}
               </>
             )}
             {showPeriod && (
@@ -156,6 +219,36 @@ export default async function PortalSummariesPage({
                     <div className="w-24 px-3 py-2 shrink-0 text-muted-foreground">
                       {hasData ? row.requestCount : "—"}
                     </div>
+                    {auditMap &&
+                      (() => {
+                        const af = auditMap.get(row.userName);
+                        if (!af || af.total === 0) {
+                          return (
+                            <div className="w-40 px-3 py-2 shrink-0 text-muted-foreground/50">
+                              —
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="w-40 px-3 py-2 shrink-0 flex flex-wrap gap-1">
+                            {af.repeatedBlast > 0 && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
+                                重{af.repeatedBlast}
+                              </span>
+                            )}
+                            {af.emptyOutput > 0 && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400">
+                                空{af.emptyOutput}
+                              </span>
+                            )}
+                            {af.hugeInput > 0 && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
+                                巨{af.hugeInput}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                   </>
                 )}
                 {showPeriod && (

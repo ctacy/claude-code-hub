@@ -425,6 +425,154 @@ async function findLeaderboardWithTimezone(
 }
 
 /**
+ * 今日消耗排行榜附带周同比（LAG 7天）
+ * 单次条件聚合查询，避免两次独立查询拼接。
+ * weekOverWeekDelta: 百分比 (e.g. 38 = +38%)；prior 无数据时为 null
+ */
+export interface LeaderboardEntryWithDelta extends LeaderboardEntry {
+  weekOverWeekDelta: number | null;
+}
+
+export async function findDailyLeaderboardWithWeekOverWeek(
+  userFilters?: UserLeaderboardFilters
+): Promise<LeaderboardEntryWithDelta[]> {
+  const timezone = await resolveSystemTimezone();
+  const tz = timezone;
+  const nowLocal = sql`CURRENT_TIMESTAMP AT TIME ZONE ${tz}`;
+
+  const todayLocalStart = sql`DATE_TRUNC('day', ${nowLocal})`;
+  const currentStart = sql`(${todayLocalStart} AT TIME ZONE ${tz})`;
+  const currentEnd = sql`((${todayLocalStart} + INTERVAL '1 day') AT TIME ZONE ${tz})`;
+
+  const priorLocalStart = sql`(DATE_TRUNC('day', ${nowLocal}) - INTERVAL '7 days')`;
+  const priorStart = sql`(${priorLocalStart} AT TIME ZONE ${tz})`;
+  const priorEnd = sql`((${priorLocalStart} + INTERVAL '1 day') AT TIME ZONE ${tz})`;
+
+  const isCurrent = sql`(${usageLedger.createdAt} >= ${currentStart} AND ${usageLedger.createdAt} < ${currentEnd})`;
+  const isPrior = sql`(${usageLedger.createdAt} >= ${priorStart} AND ${usageLedger.createdAt} < ${priorEnd})`;
+
+  const userFilterCond = buildUserFilterCondition(userFilters);
+  const whereConditions = [
+    LEDGER_BILLING_CONDITION,
+    sql`(${isCurrent} OR ${isPrior})`,
+    ...(userFilterCond ? [userFilterCond] : []),
+  ];
+
+  const rows = await db
+    .select({
+      userId: usageLedger.userId,
+      userName: users.name,
+      currentCost: sql<string>`COALESCE(SUM(CASE WHEN ${isCurrent} THEN ${usageLedger.costUsd} ELSE 0 END), 0)`,
+      priorCost: sql<string>`COALESCE(SUM(CASE WHEN ${isPrior} THEN ${usageLedger.costUsd} ELSE 0 END), 0)`,
+      currentRequests: sql<number>`COUNT(CASE WHEN ${isCurrent} THEN 1 END)::double precision`,
+      currentTokens: sql<number>`COALESCE(SUM(CASE WHEN ${isCurrent} THEN
+        ${usageLedger.inputTokens} + ${usageLedger.outputTokens} +
+        COALESCE(${usageLedger.cacheCreationInputTokens}, 0) +
+        COALESCE(${usageLedger.cacheReadInputTokens}, 0) ELSE 0 END)::double precision, 0)`,
+    })
+    .from(usageLedger)
+    .innerJoin(users, and(sql`${usageLedger.userId} = ${users.id}`, isNull(users.deletedAt)))
+    .where(and(...whereConditions))
+    .groupBy(usageLedger.userId, users.name)
+    .orderBy(
+      desc(sql`COALESCE(SUM(CASE WHEN ${isCurrent} THEN ${usageLedger.costUsd} ELSE 0 END), 0)`)
+    );
+
+  return rows.map((row) => {
+    const current = parseFloat(row.currentCost);
+    const prior = parseFloat(row.priorCost);
+    return {
+      userId: row.userId,
+      userName: row.userName,
+      totalCost: current,
+      totalRequests: row.currentRequests,
+      totalTokens: row.currentTokens,
+      weekOverWeekDelta: prior > 0 ? ((current - prior) / prior) * 100 : null,
+    };
+  });
+}
+
+/**
+ * 周期消耗排行榜附带上一周期对比（LAG 1 week/month）
+ * 返回 { current, prior, totalDelta }；prior 无数据时 totalDelta 为 null
+ */
+export type PeriodCompareType = "weekly" | "monthly";
+
+export interface PeriodComparisonResult {
+  current: LeaderboardEntry[];
+  prior: LeaderboardEntry[];
+  totalDelta: number | null;
+}
+
+export async function findPeriodLeaderboardWithPriorPeriod(
+  periodType: PeriodCompareType,
+  userFilters?: UserLeaderboardFilters
+): Promise<PeriodComparisonResult> {
+  const timezone = await resolveSystemTimezone();
+  const tz = timezone;
+
+  const current = await findLeaderboardWithTimezone(
+    periodType === "weekly" ? "weekly" : "monthly",
+    tz,
+    undefined,
+    userFilters
+  );
+
+  const nowLocal = sql`CURRENT_TIMESTAMP AT TIME ZONE ${tz}`;
+
+  // 使用条件 SQL 分支避免将 truncUnit/lagInterval 作为参数传入 DATE_TRUNC/INTERVAL（PG 不支持参数化字面量）
+  const priorLocalStart =
+    periodType === "weekly"
+      ? sql`(DATE_TRUNC('week', ${nowLocal}) - INTERVAL '1 week')`
+      : sql`(DATE_TRUNC('month', ${nowLocal}) - INTERVAL '1 month')`;
+  const priorLocalEnd =
+    periodType === "weekly"
+      ? sql`DATE_TRUNC('week', ${nowLocal})`
+      : sql`DATE_TRUNC('month', ${nowLocal})`;
+  const priorStartUTC = sql`(${priorLocalStart} AT TIME ZONE ${tz})`;
+  const priorEndUTC = sql`(${priorLocalEnd} AT TIME ZONE ${tz})`;
+
+  const userFilterCond = buildUserFilterCondition(userFilters);
+  const whereConditions = [
+    LEDGER_BILLING_CONDITION,
+    sql`${usageLedger.createdAt} >= ${priorStartUTC} AND ${usageLedger.createdAt} < ${priorEndUTC}`,
+    ...(userFilterCond ? [userFilterCond] : []),
+  ];
+
+  const priorRows = await db
+    .select({
+      userId: usageLedger.userId,
+      userName: users.name,
+      totalRequests: sql<number>`count(*)::double precision`,
+      totalCost: sql<string>`COALESCE(sum(${usageLedger.costUsd}), 0)`,
+      totalTokens: sql<number>`COALESCE(sum(
+        ${usageLedger.inputTokens} + ${usageLedger.outputTokens} +
+        COALESCE(${usageLedger.cacheCreationInputTokens}, 0) +
+        COALESCE(${usageLedger.cacheReadInputTokens}, 0)
+      )::double precision, 0::double precision)`,
+    })
+    .from(usageLedger)
+    .innerJoin(users, and(sql`${usageLedger.userId} = ${users.id}`, isNull(users.deletedAt)))
+    .where(and(...whereConditions))
+    .groupBy(usageLedger.userId, users.name)
+    .orderBy(desc(sql`COALESCE(sum(${usageLedger.costUsd}), 0)`));
+
+  const prior: LeaderboardEntry[] = priorRows.map((r) => ({
+    userId: r.userId,
+    userName: r.userName,
+    totalRequests: r.totalRequests,
+    totalCost: parseFloat(r.totalCost),
+    totalTokens: r.totalTokens,
+  }));
+
+  const currentTotal = current.reduce((s, e) => s + e.totalCost, 0);
+  const priorTotal = prior.reduce((s, e) => s + e.totalCost, 0);
+  const totalDelta = priorTotal > 0 ? ((currentTotal - priorTotal) / priorTotal) * 100 : null;
+
+  return { current, prior, totalDelta };
+}
+
+/**
  * 查询自定义日期范围消耗排行榜
  */
 export async function findCustomRangeLeaderboard(

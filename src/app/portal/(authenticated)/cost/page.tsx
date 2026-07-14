@@ -1,11 +1,15 @@
-// AI Accept 2026-07-14 main v3
+// AI Accept 2026-07-14 main v5
+import { cookies } from "next/headers";
+import { getExchangeRates } from "@/lib/portal/currency";
+import { getCurrentCurrency } from "@/lib/portal/currency-cookie";
 import {
   findAllTimeLeaderboard,
   findCustomRangeLeaderboard,
-  findDailyLeaderboard,
-  findMonthlyLeaderboard,
-  findWeeklyLeaderboard,
+  findDailyLeaderboardWithWeekOverWeek,
+  findPeriodLeaderboardWithPriorPeriod,
+  type LeaderboardEntry,
 } from "@/repository/leaderboard";
+import { CurrencySwitcher } from "../_components/currency-switcher";
 import { CostLeaderboardTable } from "./_components/cost-leaderboard-table";
 import { CostPeriodBar } from "./_components/cost-period-bar";
 
@@ -17,12 +21,16 @@ function isValidDateStr(s: string | undefined): s is string {
   return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
+// AI Accept 2026-07-14 main v5
 export default async function PortalCostPage({
   searchParams,
 }: {
   searchParams: Promise<{ period?: string; startDate?: string; endDate?: string }>;
 }) {
   const { period, startDate, endDate } = await searchParams;
+  const cookieStore = await cookies();
+  const currency = getCurrentCurrency(cookieStore);
+  const rates = getExchangeRates();
   const hasCustomRange = isValidDateStr(startDate) && isValidDateStr(endDate);
   const currentPeriod: Period =
     period === "custom" && hasCustomRange
@@ -31,12 +39,35 @@ export default async function PortalCostPage({
         ? (period as Period)
         : "daily";
 
-  const rows = await (() => {
+  // 带周同比/环比的行数据
+  type RowEntry = LeaderboardEntry & { weekOverWeekDelta?: number | null };
+
+  const rows = await (async (): Promise<RowEntry[]> => {
     switch (currentPeriod) {
-      case "weekly":
-        return findWeeklyLeaderboard(undefined, true);
-      case "monthly":
-        return findMonthlyLeaderboard(undefined, true);
+      case "daily":
+        return findDailyLeaderboardWithWeekOverWeek(undefined);
+      case "weekly": {
+        const result = await findPeriodLeaderboardWithPriorPeriod("weekly", undefined);
+        const priorMap = new Map(result.prior.map((e) => [e.userId, e.totalCost]));
+        return result.current.map((e) => {
+          const prior = priorMap.get(e.userId) ?? 0;
+          return {
+            ...e,
+            weekOverWeekDelta: prior > 0 ? ((e.totalCost - prior) / prior) * 100 : null,
+          };
+        });
+      }
+      case "monthly": {
+        const result = await findPeriodLeaderboardWithPriorPeriod("monthly", undefined);
+        const priorMap = new Map(result.prior.map((e) => [e.userId, e.totalCost]));
+        return result.current.map((e) => {
+          const prior = priorMap.get(e.userId) ?? 0;
+          return {
+            ...e,
+            weekOverWeekDelta: prior > 0 ? ((e.totalCost - prior) / prior) * 100 : null,
+          };
+        });
+      }
       case "allTime":
         return findAllTimeLeaderboard(undefined, true);
       case "custom":
@@ -45,8 +76,6 @@ export default async function PortalCostPage({
           undefined,
           true
         );
-      default:
-        return findDailyLeaderboard(undefined, true);
     }
   })();
 
@@ -71,9 +100,17 @@ export default async function PortalCostPage({
         </p>
       </div>
 
-      <CostPeriodBar />
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <CostPeriodBar />
+        <CurrencySwitcher currentCurrency={currency} />
+      </div>
 
-      <CostLeaderboardTable rows={rows} periodLabel={periodLabel} />
+      <CostLeaderboardTable
+        rows={rows}
+        periodLabel={periodLabel}
+        currency={currency}
+        rates={rates}
+      />
     </div>
   );
 }
