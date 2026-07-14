@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
+  { href: "/portal/dashboard", label: "仪表盘" },
   { href: "/portal/summaries", label: "AI使用分析" },
   { href: "/portal/cost", label: "成本榜" },
   { href: "/portal/io-logs", label: "请求记录" },
