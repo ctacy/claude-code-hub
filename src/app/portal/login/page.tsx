@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -27,13 +28,14 @@ export default function PortalLoginPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "登录失败");
+        setLoading(false);
         return;
       }
+      // 登录成功：保持 loading 直至页面跳转完成，避免按钮态闪回"登录"
       router.push("/portal/summaries");
       router.refresh();
     } catch {
       setError("网络错误，请重试");
-    } finally {
       setLoading(false);
     }
   }
@@ -69,6 +71,7 @@ export default function PortalLoginPage() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
               {loading ? "登录中..." : "登录"}
             </Button>
           </form>

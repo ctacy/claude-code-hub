@@ -1,8 +1,10 @@
+// AI Accept 2026-07-14 main v1
 "use client";
 
-import { LogOut } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +18,12 @@ const NAV_ITEMS = [
 export function PortalHeader({ username }: { username: string }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  // 路由切换完成后清除 pending 状态
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   async function handleLogout() {
     await fetch("/api/portal/logout", { method: "POST" }).catch(() => {});
@@ -29,18 +37,26 @@ export function PortalHeader({ username }: { username: string }) {
         <div className="flex items-center gap-6">
           <span className="text-sm font-semibold">管理门户</span>
           <nav className="flex items-center gap-4">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "text-sm text-muted-foreground transition-colors hover:text-foreground",
-                  pathname?.startsWith(item.href) && "text-foreground font-medium"
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const isActive = pathname?.startsWith(item.href);
+              const isPending = pendingHref === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => {
+                    if (!isActive) setPendingHref(item.href);
+                  }}
+                  className={cn(
+                    "flex items-center gap-1 text-sm transition-colors hover:text-foreground",
+                    isActive || isPending ? "text-foreground font-medium" : "text-muted-foreground"
+                  )}
+                >
+                  {isPending && <Loader2 className="h-3 w-3 animate-spin shrink-0" />}
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
         <div className="flex items-center gap-3">

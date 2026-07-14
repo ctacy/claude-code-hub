@@ -1,5 +1,6 @@
 import {
   findAllTimeLeaderboard,
+  findCustomRangeLeaderboard,
   findDailyLeaderboard,
   findMonthlyLeaderboard,
   findWeeklyLeaderboard,
@@ -8,7 +9,7 @@ import { CostPeriodBar } from "./_components/cost-period-bar";
 
 export const dynamic = "force-dynamic";
 
-type Period = "daily" | "weekly" | "monthly" | "allTime";
+type Period = "daily" | "weekly" | "monthly" | "allTime" | "custom";
 
 function formatCost(usd: number): string {
   if (usd === 0) return "$0.0000";
@@ -27,17 +28,26 @@ const PERIOD_LABEL: Record<Period, string> = {
   weekly: "本周",
   monthly: "本月",
   allTime: "全部",
+  custom: "自定义",
 };
+
+function isValidDateStr(s: string | undefined): s is string {
+  return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
 
 export default async function PortalCostPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; startDate?: string; endDate?: string }>;
 }) {
-  const { period } = await searchParams;
-  const currentPeriod: Period = ["daily", "weekly", "monthly", "allTime"].includes(period ?? "")
-    ? (period as Period)
-    : "daily";
+  const { period, startDate, endDate } = await searchParams;
+  const hasCustomRange = isValidDateStr(startDate) && isValidDateStr(endDate);
+  const currentPeriod: Period =
+    period === "custom" && hasCustomRange
+      ? "custom"
+      : ["daily", "weekly", "monthly", "allTime"].includes(period ?? "")
+        ? (period as Period)
+        : "daily";
 
   const rows = await (() => {
     switch (currentPeriod) {
@@ -47,17 +57,22 @@ export default async function PortalCostPage({
         return findMonthlyLeaderboard();
       case "allTime":
         return findAllTimeLeaderboard();
+      case "custom":
+        return findCustomRangeLeaderboard({ startDate: startDate!, endDate: endDate! });
       default:
         return findDailyLeaderboard();
     }
   })();
+
+  const periodLabel =
+    currentPeriod === "custom" ? `${startDate} ~ ${endDate}` : PERIOD_LABEL[currentPeriod];
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">用户成本榜</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {PERIOD_LABEL[currentPeriod]} · 按消耗金额降序，数据来源 usage_ledger。
+          {periodLabel} · 按消耗金额降序，数据来源 usage_ledger。
         </p>
       </div>
 
