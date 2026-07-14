@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 加 UTF-8 BOM（﻿），确保 Excel 打开时中文不乱码
-  const bom = "﻿";
+  const bom = "\uFEFF";
   const filename = `summaries-${currentPeriod}-${filenameSuffix}.csv`;
 
   return new NextResponse(bom + csv, {
