@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     csv = [header, ...lines].join("\r\n");
   }
 
-  // 加 UTF-8 BOM（﻿），确保 Excel 打开时中文不乱码
+  // 加 UTF-8 BOM（），确保 Excel 打开时中文不乱码
   const bom = "\uFEFF";
   const filename = `summaries-${currentPeriod}-${filenameSuffix}.csv`;
 
