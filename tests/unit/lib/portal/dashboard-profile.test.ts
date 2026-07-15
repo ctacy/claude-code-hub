@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { aggregateDailyTotals, normalizeProviderRows } from "@/lib/portal/dashboard-profile";
+import {
+  aggregateDailyTotals,
+  normalizeProviderRows,
+  sortByAbsDelta,
+} from "@/lib/portal/dashboard-profile";
 import type { ProviderLeaderboardEntry } from "@/repository/leaderboard";
 
 function makeRow(partial: Partial<ProviderLeaderboardEntry>): ProviderLeaderboardEntry {
@@ -112,5 +116,37 @@ describe("normalizeProviderRows", () => {
 
   it("输入为空时返回空数组", () => {
     expect(normalizeProviderRows([])).toEqual([]);
+  });
+});
+
+describe("sortByAbsDelta", () => {
+  it("按 |deltaPct| 降序，差值相同时保留顺序", () => {
+    const sorted = sortByAbsDelta([
+      { userId: 1, userName: "a", currentCost: 10, priorCost: 5, deltaPct: 100 },
+      { userId: 2, userName: "b", currentCost: 10, priorCost: 2, deltaPct: 400 },
+      { userId: 3, userName: "c", currentCost: 10, priorCost: 50, deltaPct: -80 },
+    ]);
+
+    expect(sorted.map((r) => r.userName)).toEqual(["b", "a", "c"]);
+  });
+
+  it("新增用户（deltaPct=null）沉底", () => {
+    const sorted = sortByAbsDelta([
+      { userId: 1, userName: "a", currentCost: 10, priorCost: 5, deltaPct: 100 },
+      { userId: 2, userName: "new", currentCost: 8, priorCost: 0, deltaPct: null },
+      { userId: 3, userName: "b", currentCost: 10, priorCost: 5, deltaPct: 50 },
+    ]);
+
+    expect(sorted.map((r) => r.userName)).toEqual(["a", "b", "new"]);
+  });
+
+  it("不修改原数组", () => {
+    const input = [
+      { userId: 1, userName: "a", currentCost: 10, priorCost: 5, deltaPct: 100 },
+      { userId: 2, userName: "b", currentCost: 10, priorCost: 5, deltaPct: -50 },
+    ];
+    const before = input.map((r) => r.userName);
+    sortByAbsDelta(input);
+    expect(input.map((r) => r.userName)).toEqual(before);
   });
 });

@@ -153,7 +153,9 @@ export function SummaryTableClient({
 
           const copyCell = (
             <div className="w-10 shrink-0 py-2 flex justify-center">
-              {hasData && row.summaryText && <CopySummaryButton text={row.summaryText} />}
+              {hasData && row.summaryText && (
+                <CopySummaryButton text={row.summaryText} size="icon" />
+              )}
             </div>
           );
 

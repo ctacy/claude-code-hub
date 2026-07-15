@@ -8,20 +8,15 @@ import {
 } from "@/repository/leaderboard";
 import type { DatabaseStatRow } from "@/types/statistics";
 
-/**
- * 用户周对比数据：本期 vs 上期按用户聚合。
- * 取总成本最高的 N 个本期用户，prior 缺失则视为 0。
- */
+/** 用户周对比数据：本期 vs 上期按用户聚合。prior 缺失视为 0（新增用户）。 */
 export interface WeeklyCostRow {
   userId: number;
   userName: string;
   currentCost: number;
   priorCost: number;
-  /** 百分比变化，prior 为 0 时为 null */
+  /** 百分比变化，prior 为 0 时为 null（视为新增） */
   deltaPct: number | null;
 }
-
-const WEEKLY_BAR_LIMIT = 8;
 
 export async function getWeeklyCostProfile(): Promise<WeeklyCostRow[]> {
   const { current, prior } = await findPeriodLeaderboardWithPriorPeriod("weekly");
@@ -40,8 +35,16 @@ export async function getWeeklyCostProfile(): Promise<WeeklyCostRow[]> {
     };
   });
 
-  rows.sort((a, b) => b.currentCost - a.currentCost);
-  return rows.slice(0, WEEKLY_BAR_LIMIT);
+  return sortByAbsDelta(rows);
+}
+
+/** 按 |deltaPct| 降序；null（新增用户）沉底 */
+export function sortByAbsDelta(rows: WeeklyCostRow[]): WeeklyCostRow[] {
+  return [...rows].sort((a, b) => {
+    const av = a.deltaPct === null ? Number.NEGATIVE_INFINITY : Math.abs(a.deltaPct);
+    const bv = b.deltaPct === null ? Number.NEGATIVE_INFINITY : Math.abs(b.deltaPct);
+    return bv - av;
+  });
 }
 
 /**
