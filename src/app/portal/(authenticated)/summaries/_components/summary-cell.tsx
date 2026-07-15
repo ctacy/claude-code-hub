@@ -6,14 +6,14 @@ export function SummaryCell({ text }: { text: string }) {
   const truncated = text.length > 50 ? `${text.slice(0, 50)}…` : text;
 
   if (text.length <= 50) {
-    return <span>{text}</span>;
+    return <span className="break-words">{text}</span>;
   }
 
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="cursor-default">{truncated}</span>
+          <span className="cursor-default break-words">{truncated}</span>
         </TooltipTrigger>
         <TooltipContent
           side="top"

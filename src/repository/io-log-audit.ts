@@ -22,7 +22,8 @@ export interface IoLogWithFlags {
 /**
  * 指定日期所有用户的无效请求审计：批量返回 Map<userName, AuditFlags>。
  * 三类标记：
- *   repeatedBlast — 同一 request_body 在 30min 内重复 >=3 次
+ *   repeatedBlast — 同一 request_body 在 30min 内重复 >=3 次，且分布在 >=2 个不同 session
+ *                   （同一会话内的连续重复，如 agentic loop 工具循环/流式续写，属正常业务，不计入）
  *   emptyOutput   — response_body IS NULL / 长度 < 5 / output_tokens = 0
  *   hugeInput     — input_tokens > 100000
  */
@@ -37,27 +38,37 @@ export async function auditFlagsForDate(
              iol.response_body,
              iol.created_at,
              mr.input_tokens,
-             mr.output_tokens
+             mr.output_tokens,
+             mr.session_id
       FROM request_io_log iol
       LEFT JOIN message_request mr ON mr.id = iol.request_id
       WHERE iol.user_name IS NOT NULL
         AND iol.created_at >= (${dateStr}::date AT TIME ZONE ${timezone})
         AND iol.created_at <  ((${dateStr}::date + INTERVAL '1 day') AT TIME ZONE ${timezone})
     ),
-    blast_bodies AS (
+    blast_windows AS (
+      SELECT user_name,
+             request_body,
+             created_at,
+             LEAD(created_at, 2) OVER (
+               PARTITION BY user_name, request_body
+               ORDER BY created_at
+             ) AS lead2
+      FROM base
+      WHERE request_body IS NOT NULL
+    ),
+    blast_candidates AS (
       SELECT DISTINCT user_name, request_body
-      FROM (
-        SELECT user_name,
-               request_body,
-               created_at,
-               LEAD(created_at, 2) OVER (
-                 PARTITION BY user_name, request_body
-                 ORDER BY created_at
-               ) AS lead2
-        FROM base
-        WHERE request_body IS NOT NULL
-      ) t
+      FROM blast_windows
       WHERE lead2 - created_at <= INTERVAL '30 minutes'
+    ),
+    blast_bodies AS (
+      -- 30min 内 >=3 次只是候选；只有跨 >=2 个不同 session 出现才算"跨会话重复刷"
+      SELECT bc.user_name, bc.request_body
+      FROM blast_candidates bc
+      JOIN base b ON b.user_name = bc.user_name AND b.request_body = bc.request_body
+      GROUP BY bc.user_name, bc.request_body
+      HAVING COUNT(DISTINCT b.session_id) >= 2
     ),
     annotated AS (
       SELECT b.user_name,
@@ -117,26 +128,22 @@ export async function listIoLogsWithFlags(
              iol.response_body,
              iol.created_at,
              mr.input_tokens,
-             mr.output_tokens
+             mr.output_tokens,
+             mr.session_id
       FROM request_io_log iol
       LEFT JOIN message_request mr ON mr.id = iol.request_id
       WHERE iol.user_name = ${userName}
         AND iol.created_at >= (${dateStr}::date AT TIME ZONE ${timezone})
         AND iol.created_at <  ((${dateStr}::date + INTERVAL '1 day') AT TIME ZONE ${timezone})
     ),
+    -- 仅统计跨越 >=2 个不同 session 的重复 body：同一会话内的连续重复
+    -- （agentic 工具循环 / "继续" 续写 / 流式重连）属于正常业务，不计入
     blast_bodies AS (
-      SELECT DISTINCT request_body
-      FROM (
-        SELECT request_body,
-               created_at,
-               LEAD(created_at, 2) OVER (
-                 PARTITION BY request_body
-                 ORDER BY created_at
-               ) AS lead2
-        FROM base
-        WHERE request_body IS NOT NULL
-      ) t
-      WHERE lead2 - created_at <= INTERVAL '30 minutes'
+      SELECT request_body
+      FROM base
+      WHERE request_body IS NOT NULL
+      GROUP BY request_body
+      HAVING COUNT(*) >= 3 AND COUNT(DISTINCT session_id) >= 2
     )
     SELECT
       b.id,

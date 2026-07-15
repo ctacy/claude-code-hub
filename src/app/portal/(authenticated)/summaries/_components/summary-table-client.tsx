@@ -8,13 +8,6 @@ import { BatchActionsBar } from "./batch-actions-bar";
 import { CopySummaryButton } from "./copy-summary-button";
 import { SummaryCell } from "./summary-cell";
 
-export interface AuditFlags {
-  repeatedBlast: number;
-  emptyOutput: number;
-  hugeInput: number;
-  total: number;
-}
-
 export interface SummaryRow {
   userName: string;
   date?: string;
@@ -33,8 +26,6 @@ interface SummaryTableClientProps {
   /** used for batch trigger; the date all rows share in day mode */
   effectiveDate?: string;
   dateValid: boolean;
-  /** optional per-user audit flags, only rendered in day mode */
-  auditMap?: Map<string, AuditFlags> | null;
 }
 
 // AI Accept 2026-07-14 main v2
@@ -45,7 +36,6 @@ export function SummaryTableClient({
   currentPeriod,
   effectiveDate,
   dateValid,
-  auditMap,
 }: SummaryTableClientProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -106,7 +96,6 @@ export function SummaryTableClient({
             <>
               <div className="w-32 px-3 shrink-0">{dateValid ? "总结日期" : "最近总结日期"}</div>
               <div className="w-24 px-3 shrink-0">{dateValid ? "当日请求数" : "请求数"}</div>
-              {auditMap && <div className="w-40 px-3 shrink-0">无效率</div>}
             </>
           )}
           {showPeriod && (
@@ -135,34 +124,6 @@ export function SummaryTableClient({
                   <div className="w-24 px-3 py-2 shrink-0 text-muted-foreground">
                     {hasData ? row.requestCount : "—"}
                   </div>
-                  {auditMap &&
-                    (() => {
-                      const af = auditMap.get(row.userName);
-                      if (!af || af.total === 0) {
-                        return (
-                          <div className="w-40 px-3 py-2 shrink-0 text-muted-foreground/50">—</div>
-                        );
-                      }
-                      return (
-                        <div className="w-40 px-3 py-2 shrink-0 flex flex-wrap gap-1">
-                          {af.repeatedBlast > 0 && (
-                            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
-                              重{af.repeatedBlast}
-                            </span>
-                          )}
-                          {af.emptyOutput > 0 && (
-                            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400">
-                              空{af.emptyOutput}
-                            </span>
-                          )}
-                          {af.hugeInput > 0 && (
-                            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
-                              巨{af.hugeInput}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
                 </>
               )}
               {showPeriod && (
@@ -178,7 +139,7 @@ export function SummaryTableClient({
                   </div>
                 </>
               )}
-              <div className="flex-1 px-3 py-2 text-xs text-muted-foreground">
+              <div className="flex-1 min-w-0 px-3 py-2 text-xs text-muted-foreground">
                 {hasData && row.summaryText ? (
                   <SummaryCell text={row.summaryText} />
                 ) : showDate ? (

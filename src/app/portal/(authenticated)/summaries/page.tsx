@@ -1,21 +1,15 @@
-// AI Accept 2026-07-14 main v7
+// AI Accept 2026-07-14 main v9
 import { format, parseISO, subMonths, subWeeks, subYears } from "date-fns";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { getCurrentCurrency } from "@/lib/portal/currency-cookie";
-import { resolveSystemTimezone } from "@/lib/utils/timezone";
 import {
   listAllUsersWithSummaryByDate,
   listLatestSummariesPerUser,
 } from "@/repository/daily-work-summary";
-import { type AuditFlags, auditFlagsForDate } from "@/repository/io-log-audit";
 import {
   listLatestPeriodSummariesPerUser,
   listPeriodSummariesByPeriod,
 } from "@/repository/period-work-summary";
-import { CurrencySwitcher } from "../_components/currency-switcher";
-import { ExportSummariesButton } from "./_components/export-summaries-button";
 import { PeriodComparisonCard } from "./_components/period-comparison-card";
 import { PeriodToolbar } from "./_components/period-toolbar";
 import { type SummaryRow, SummaryTableClient } from "./_components/summary-table-client";
@@ -43,8 +37,6 @@ export default async function PortalSummariesPage({
   searchParams: Promise<{ date?: string; period?: string; periodStart?: string }>;
 }) {
   const { date, period, periodStart } = await searchParams;
-  const cookieStore = await cookies();
-  const currency = getCurrentCurrency(cookieStore);
 
   const currentPeriod: PeriodType = ["day", "week", "month", "year"].includes(period ?? "")
     ? (period as PeriodType)
@@ -59,8 +51,6 @@ export default async function PortalSummariesPage({
 
   let rows: SummaryRow[] = [];
 
-  let auditMap: Map<string, AuditFlags> | null = null;
-
   let priorPeriodData: {
     priorStart: string;
     currentTotal: number;
@@ -70,18 +60,13 @@ export default async function PortalSummariesPage({
 
   if (currentPeriod === "day") {
     if (dateValid) {
-      const timezone = await resolveSystemTimezone();
-      const [summaryRows, auditResult] = await Promise.all([
-        listAllUsersWithSummaryByDate(effectiveDate!),
-        auditFlagsForDate(effectiveDate!, timezone).catch(() => new Map<string, AuditFlags>()),
-      ]);
+      const summaryRows = await listAllUsersWithSummaryByDate(effectiveDate!);
       rows = summaryRows.map((r) => ({
         userName: r.userName,
         date: "date" in r ? r.date : undefined,
         requestCount: r.requestCount,
         summaryText: "summaryText" in r ? (r.summaryText ?? undefined) : undefined,
       }));
-      auditMap = auditResult;
     } else {
       const latest = await listLatestSummariesPerUser();
       const fallbackDate = latest
@@ -154,13 +139,6 @@ export default async function PortalSummariesPage({
 
       <div className="flex items-center justify-between gap-3">
         <PeriodToolbar />
-        <div className="flex items-center gap-2">
-          <CurrencySwitcher currentCurrency={currency} />
-          <ExportSummariesButton
-            period={currentPeriod}
-            periodStart={showPeriod ? periodStart : effectiveDate}
-          />
-        </div>
       </div>
 
       {showPeriod && priorPeriodData && (
@@ -189,7 +167,6 @@ export default async function PortalSummariesPage({
           currentPeriod={currentPeriod}
           effectiveDate={effectiveDate}
           dateValid={dateValid}
-          auditMap={auditMap}
         />
       )}
     </div>

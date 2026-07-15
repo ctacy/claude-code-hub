@@ -1,19 +1,19 @@
-// AI Accept 2026-07-14 main v3
+// AI Accept 2026-07-14 main v4
 "use client";
 
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-  type Currency,
-  DEFAULT_EXCHANGE_RATES,
-  type ExchangeRates,
-  formatMoney,
-} from "@/lib/portal/currency";
 import { cn } from "@/lib/utils";
 import type { LeaderboardEntry } from "@/repository/leaderboard";
 import { DeltaBadge } from "./delta-badge";
 
 type RowEntry = LeaderboardEntry & { weekOverWeekDelta?: number | null };
+
+function formatCost(usd: number): string {
+  if (usd === 0) return "$0.0000";
+  if (usd < 0.0001) return `$${usd.toExponential(2)}`;
+  return `$${usd.toFixed(4)}`;
+}
 
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
@@ -31,13 +31,12 @@ type SortState = { key: SortKey; dir: SortDir } | null;
 export function CostLeaderboardTable({
   rows,
   periodLabel,
-  currency = "USD",
-  rates = DEFAULT_EXCHANGE_RATES,
+  comparisonLabel,
 }: {
   rows: RowEntry[];
   periodLabel: string;
-  currency?: Currency;
-  rates?: ExchangeRates;
+  /** 增长率对比列的表头文案；不同周期对比基准不同（如"上周对比"/"上月对比"） */
+  comparisonLabel?: string;
 }) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [sort, setSort] = useState<SortState>(null);
@@ -55,7 +54,7 @@ export function CostLeaderboardTable({
     setSort((prev) => {
       if (!prev || prev.key !== key) return { key, dir: "desc" };
       if (prev.dir === "desc") return { key, dir: "asc" };
-      return null; // third click resets to default (cost DESC)
+      return null;
     });
   }
 
@@ -115,9 +114,11 @@ export function CostLeaderboardTable({
           <SortHeader k="totalTokens">Token 用量</SortHeader>
         </div>
         <div className="w-32 px-3 pr-4 shrink-0 text-right">
-          <SortHeader k="totalCost">消耗（{currency}）</SortHeader>
+          <SortHeader k="totalCost">消耗金额</SortHeader>
         </div>
-        <div className="w-24 px-3 pr-4 shrink-0 text-right">上周对比</div>
+        {comparisonLabel && (
+          <div className="w-24 px-3 pr-4 shrink-0 text-right">{comparisonLabel}</div>
+        )}
       </div>
       {sortedRows.map((row, idx) => {
         const isOpen = expanded.has(row.userId);
@@ -157,11 +158,13 @@ export function CostLeaderboardTable({
                 {formatTokens(row.totalTokens)}
               </div>
               <div className="w-32 px-3 pr-4 shrink-0 text-right font-mono font-semibold">
-                {formatMoney(row.totalCost, currency, rates)}
+                {formatCost(row.totalCost)}
               </div>
-              <div className="w-24 px-3 pr-4 shrink-0 text-right">
-                <DeltaBadge delta={row.weekOverWeekDelta ?? null} />
-              </div>
+              {comparisonLabel && (
+                <div className="w-24 px-3 pr-4 shrink-0 text-right">
+                  <DeltaBadge delta={row.weekOverWeekDelta ?? null} />
+                </div>
+              )}
             </button>
             {hasChildren && isOpen && (
               <div className="bg-muted/10 border-t border-border/40">
@@ -182,7 +185,7 @@ export function CostLeaderboardTable({
                       {formatTokens(m.totalTokens)}
                     </div>
                     <div className="w-32 px-3 pr-4 shrink-0 text-right font-mono">
-                      {formatMoney(m.totalCost, currency, rates)}
+                      {formatCost(m.totalCost)}
                     </div>
                   </div>
                 ))}

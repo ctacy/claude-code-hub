@@ -4,13 +4,16 @@
 import {
   addDays,
   addMonths,
+  addYears,
   differenceInCalendarDays,
   endOfMonth,
   endOfWeek,
+  endOfYear,
   format,
   isSameDay,
   startOfMonth,
   startOfWeek,
+  startOfYear,
 } from "date-fns";
 import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,13 +24,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-type Period = "daily" | "weekly" | "monthly" | "allTime" | "custom";
-type QuickPeriod = "daily" | "weekly" | "monthly" | "allTime";
+type Period = "daily" | "weekly" | "monthly" | "yearly" | "allTime" | "custom";
+type QuickPeriod = "daily" | "weekly" | "monthly" | "yearly" | "allTime";
 
 const QUICK_PERIODS: { value: QuickPeriod; label: string }[] = [
   { value: "daily", label: "今日" },
   { value: "weekly", label: "本周" },
   { value: "monthly", label: "本月" },
+  { value: "yearly", label: "本年" },
   { value: "allTime", label: "全部" },
 ];
 
@@ -58,6 +62,11 @@ function getDateRangeForPeriod(
       const end = endOfMonth(now);
       return { startDate: formatDate(start), endDate: formatDate(end) };
     }
+    case "yearly": {
+      const start = startOfYear(now);
+      const end = endOfYear(now);
+      return { startDate: formatDate(start), endDate: formatDate(end) };
+    }
     default:
       return { startDate: "2020-01-01", endDate: formatDate(now) };
   }
@@ -69,6 +78,14 @@ function shiftDateRange(
 ): { startDate: string; endDate: string } {
   const start = parseDate(range.startDate);
   const end = parseDate(range.endDate);
+
+  if (isSameDay(start, startOfYear(start)) && isSameDay(end, endOfYear(start))) {
+    const year = addYears(start, direction === "prev" ? -1 : 1);
+    return {
+      startDate: formatDate(startOfYear(year)),
+      endDate: formatDate(endOfYear(year)),
+    };
+  }
 
   if (isSameDay(start, startOfMonth(start)) && isSameDay(end, endOfMonth(start))) {
     const month = addMonths(start, direction === "prev" ? -1 : 1);

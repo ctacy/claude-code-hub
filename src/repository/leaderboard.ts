@@ -199,6 +199,18 @@ export async function findMonthlyLeaderboard(
 }
 
 /**
+ * 查询本年消耗排行榜（不限制数量）
+ * 使用 SQL AT TIME ZONE 进行时区转换，确保"本年"基于系统时区
+ */
+export async function findYearlyLeaderboard(
+  userFilters?: UserLeaderboardFilters,
+  includeModelStats?: boolean
+): Promise<LeaderboardEntry[]> {
+  const timezone = await resolveSystemTimezone();
+  return findLeaderboardWithTimezone("yearly", timezone, undefined, userFilters, includeModelStats);
+}
+
+/**
  * 查询本周消耗排行榜（不限制数量）
  * 使用 SQL AT TIME ZONE 进行时区转换，确保"本周"基于系统时区
  */
@@ -239,7 +251,14 @@ export async function findLast24HoursLeaderboard(): Promise<LeaderboardEntry[]> 
 /**
  * 排行榜周期类型
  */
-export type LeaderboardPeriod = "daily" | "weekly" | "monthly" | "allTime" | "custom" | "last24h";
+export type LeaderboardPeriod =
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "yearly"
+  | "allTime"
+  | "custom"
+  | "last24h";
 
 /**
  * 自定义日期范围参数
@@ -290,6 +309,13 @@ function buildDateCondition(
     case "monthly": {
       const startLocal = sql`DATE_TRUNC('month', ${nowLocal})`;
       const endExclusiveLocal = sql`(${startLocal} + INTERVAL '1 month')`;
+      const start = sql`(${startLocal} AT TIME ZONE ${timezone})`;
+      const endExclusive = sql`(${endExclusiveLocal} AT TIME ZONE ${timezone})`;
+      return sql`${usageLedger.createdAt} >= ${start} AND ${usageLedger.createdAt} < ${endExclusive}`;
+    }
+    case "yearly": {
+      const startLocal = sql`DATE_TRUNC('year', ${nowLocal})`;
+      const endExclusiveLocal = sql`(${startLocal} + INTERVAL '1 year')`;
       const start = sql`(${startLocal} AT TIME ZONE ${timezone})`;
       const endExclusive = sql`(${endExclusiveLocal} AT TIME ZONE ${timezone})`;
       return sql`${usageLedger.createdAt} >= ${start} AND ${usageLedger.createdAt} < ${endExclusive}`;
@@ -425,7 +451,7 @@ async function findLeaderboardWithTimezone(
 }
 
 /**
- * 今日消耗排行榜附带周同比（LAG 7天）
+ * 今日消耗排行榜附带环比增长（与昨日对比）
  * 单次条件聚合查询，避免两次独立查询拼接。
  * weekOverWeekDelta: 百分比 (e.g. 38 = +38%)；prior 无数据时为 null
  */
@@ -444,7 +470,7 @@ export async function findDailyLeaderboardWithWeekOverWeek(
   const currentStart = sql`(${todayLocalStart} AT TIME ZONE ${tz})`;
   const currentEnd = sql`((${todayLocalStart} + INTERVAL '1 day') AT TIME ZONE ${tz})`;
 
-  const priorLocalStart = sql`(DATE_TRUNC('day', ${nowLocal}) - INTERVAL '7 days')`;
+  const priorLocalStart = sql`(DATE_TRUNC('day', ${nowLocal}) - INTERVAL '1 day')`;
   const priorStart = sql`(${priorLocalStart} AT TIME ZONE ${tz})`;
   const priorEnd = sql`((${priorLocalStart} + INTERVAL '1 day') AT TIME ZONE ${tz})`;
 
@@ -496,7 +522,7 @@ export async function findDailyLeaderboardWithWeekOverWeek(
  * 周期消耗排行榜附带上一周期对比（LAG 1 week/month）
  * 返回 { current, prior, totalDelta }；prior 无数据时 totalDelta 为 null
  */
-export type PeriodCompareType = "weekly" | "monthly";
+export type PeriodCompareType = "weekly" | "monthly" | "yearly";
 
 export interface PeriodComparisonResult {
   current: LeaderboardEntry[];
@@ -512,7 +538,7 @@ export async function findPeriodLeaderboardWithPriorPeriod(
   const tz = timezone;
 
   const current = await findLeaderboardWithTimezone(
-    periodType === "weekly" ? "weekly" : "monthly",
+    periodType === "weekly" ? "weekly" : periodType === "monthly" ? "monthly" : "yearly",
     tz,
     undefined,
     userFilters
@@ -524,11 +550,15 @@ export async function findPeriodLeaderboardWithPriorPeriod(
   const priorLocalStart =
     periodType === "weekly"
       ? sql`(DATE_TRUNC('week', ${nowLocal}) - INTERVAL '1 week')`
-      : sql`(DATE_TRUNC('month', ${nowLocal}) - INTERVAL '1 month')`;
+      : periodType === "monthly"
+        ? sql`(DATE_TRUNC('month', ${nowLocal}) - INTERVAL '1 month')`
+        : sql`(DATE_TRUNC('year', ${nowLocal}) - INTERVAL '1 year')`;
   const priorLocalEnd =
     periodType === "weekly"
       ? sql`DATE_TRUNC('week', ${nowLocal})`
-      : sql`DATE_TRUNC('month', ${nowLocal})`;
+      : periodType === "monthly"
+        ? sql`DATE_TRUNC('month', ${nowLocal})`
+        : sql`DATE_TRUNC('year', ${nowLocal})`;
   const priorStartUTC = sql`(${priorLocalStart} AT TIME ZONE ${tz})`;
   const priorEndUTC = sql`(${priorLocalEnd} AT TIME ZONE ${tz})`;
 
