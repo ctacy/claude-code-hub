@@ -1,4 +1,4 @@
-// AI Accept 2026-07-15 main v1
+// AI Accept 2026-07-15 main v2
 "use client";
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -23,11 +23,6 @@ interface ChartDatum {
   prior: number;
 }
 
-// 行高用于把图表高度跟用户数挂钩
-const ROW_HEIGHT = 28;
-const MIN_HEIGHT = 240;
-const MAX_HEIGHT = 480;
-
 export function WeeklyCostBar({
   rows,
   title = "本周 vs 上周用户消耗对比",
@@ -40,13 +35,15 @@ export function WeeklyCostBar({
     current: r.currentCost,
     prior: r.priorCost,
   }));
-  // 横向布局：随用户数动态调整高度，避免文字重叠
-  const chartHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, data.length * ROW_HEIGHT + 60));
 
   const chartConfig = {
     current: { label: "本周", color: "hsl(var(--chart-1))" },
     prior: { label: "上周", color: "hsl(var(--chart-2))" },
   };
+
+  // 用户名较多时旋转 X 轴标签，留出高度
+  const tickAngle = data.length > 8 ? -45 : 0;
+  const xAxisHeight = data.length > 8 ? 64 : 32;
 
   return (
     <Card>
@@ -58,29 +55,25 @@ export function WeeklyCostBar({
           <div className="py-8 text-center text-sm text-muted-foreground">本周暂无消耗数据</div>
         ) : (
           <>
-            <ChartContainer config={chartConfig} style={{ height: chartHeight }}>
-              <BarChart
-                data={data}
-                layout="vertical"
-                margin={{ left: 8, right: 24, top: 8, bottom: 8 }}
-                barCategoryGap={4}
-              >
-                <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+            <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
+              <BarChart data={data} margin={{ left: 8, right: 8, top: 8, bottom: xAxisHeight }}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis
-                  type="number"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  tickFormatter={(v: number) => `$${Number(v).toFixed(0)}`}
-                />
-                <YAxis
-                  type="category"
                   dataKey="name"
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  width={84}
-                  tickFormatter={(v: string) => (v.length > 8 ? `${v.slice(0, 8)}…` : v)}
+                  interval={0}
+                  angle={tickAngle}
+                  textAnchor={tickAngle !== 0 ? "end" : "middle"}
+                  tickFormatter={(v: string) => (v.length > 5 ? `${v.slice(0, 5)}…` : v)}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  width={52}
+                  tickFormatter={(v: number) => `$${Number(v).toFixed(0)}`}
                 />
                 <ChartTooltip
                   cursor={{ fill: "hsl(var(--muted))", fillOpacity: 0.4 }}
@@ -117,12 +110,12 @@ export function WeeklyCostBar({
                     );
                   }}
                 />
-                <Bar dataKey="prior" fill="var(--color-prior)" radius={[0, 3, 3, 0]} barSize={10} />
+                <Bar dataKey="prior" fill="var(--color-prior)" radius={[3, 3, 0, 0]} barSize={12} />
                 <Bar
                   dataKey="current"
                   fill="var(--color-current)"
-                  radius={[0, 3, 3, 0]}
-                  barSize={10}
+                  radius={[3, 3, 0, 0]}
+                  barSize={12}
                 />
               </BarChart>
             </ChartContainer>
