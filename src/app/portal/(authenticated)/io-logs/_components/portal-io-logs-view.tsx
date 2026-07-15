@@ -5,5 +5,12 @@ import { getPortalIoLogsBatch } from "@/lib/api-client/portal/io-logs";
 import { searchPortalUsersForFilter } from "@/lib/api-client/portal/users";
 
 export function PortalIoLogsView() {
-  return <IoLogsView fetchLogs={getPortalIoLogsBatch} fetchUsers={searchPortalUsersForFilter} />;
+  // AI Accept 2026-07-15 main v1
+  return (
+    <IoLogsView
+      fetchLogs={getPortalIoLogsBatch}
+      fetchUsers={searchPortalUsersForFilter}
+      defaultAutoRefresh
+    />
+  );
 }

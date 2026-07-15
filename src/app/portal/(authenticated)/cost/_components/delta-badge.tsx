@@ -39,7 +39,7 @@ export function DeltaBadge({ delta }: { delta: number | null }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium tabular-nums ${colorClass(delta)}`}
+      className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium tabular-nums whitespace-nowrap ${colorClass(delta)}`}
     >
       {arrow && <span aria-hidden>{arrow}</span>}
       {display}

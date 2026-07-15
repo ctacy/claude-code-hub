@@ -50,15 +50,18 @@ function requestPreview(body: string | null): string {
 export function IoLogsView({
   fetchLogs = getIoLogsBatch,
   fetchUsers = searchUsersForFilter,
+  defaultAutoRefresh = false,
 }: {
   fetchLogs?: FetchLogsFn;
   fetchUsers?: FetchUsersFn;
+  defaultAutoRefresh?: boolean;
 } = {}) {
   const t = useTranslations("ioLogs");
   const locale = useLocale();
   const [selectedLog, setSelectedLog] = useState<IoLogItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  // AI Accept 2026-07-15 main v1
+  const [autoRefresh, setAutoRefresh] = useState(defaultAutoRefresh);
 
   // Filter inputs (draft) vs applied filters (drive the query)
   const [userNameInput, setUserNameInput] = useState("");
