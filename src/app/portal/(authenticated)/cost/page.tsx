@@ -1,4 +1,15 @@
-// AI Accept 2026-07-14 main v6
+// AI Accept 2026-07-15 main v1
+import {
+  addDays,
+  endOfMonth,
+  endOfYear,
+  format,
+  parseISO,
+  startOfMonth,
+  startOfYear,
+  subMonths,
+  subYears,
+} from "date-fns";
 import {
   findAllTimeLeaderboard,
   findCustomRangeLeaderboard,
@@ -12,12 +23,63 @@ import { CostPeriodBar } from "./_components/cost-period-bar";
 export const dynamic = "force-dynamic";
 
 type Period = "daily" | "weekly" | "monthly" | "yearly" | "allTime" | "custom";
+type NamedPeriod = "daily" | "weekly" | "monthly" | "yearly";
+type RowEntry = LeaderboardEntry & { weekOverWeekDelta?: number | null };
 
 function isValidDateStr(s: string | undefined): s is string {
   return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
-// AI Accept 2026-07-14 main v5
+function fmt(date: Date): string {
+  return format(date, "yyyy-MM-dd");
+}
+
+function getPriorRange(
+  period: NamedPeriod,
+  startDate: string,
+  endDate: string
+): { startDate: string; endDate: string } {
+  const start = parseISO(startDate);
+  switch (period) {
+    case "daily":
+      return { startDate: fmt(addDays(start, -1)), endDate: fmt(addDays(start, -1)) };
+    case "weekly":
+      return {
+        startDate: fmt(addDays(start, -7)),
+        endDate: fmt(addDays(parseISO(endDate), -7)),
+      };
+    case "monthly": {
+      const priorStart = startOfMonth(subMonths(start, 1));
+      return { startDate: fmt(priorStart), endDate: fmt(endOfMonth(priorStart)) };
+    }
+    case "yearly": {
+      const priorStart = startOfYear(subYears(start, 1));
+      return { startDate: fmt(priorStart), endDate: fmt(endOfYear(priorStart)) };
+    }
+  }
+}
+
+async function queryWithComparison(
+  period: NamedPeriod,
+  startDate: string,
+  endDate: string
+): Promise<RowEntry[]> {
+  const priorRange = getPriorRange(period, startDate, endDate);
+  const [current, prior] = await Promise.all([
+    findCustomRangeLeaderboard({ startDate, endDate }, undefined, true),
+    findCustomRangeLeaderboard(priorRange, undefined, false),
+  ]);
+  const priorMap = new Map(prior.map((e) => [e.userId, e.totalCost]));
+  return current.map((e) => {
+    const priorCost = priorMap.get(e.userId) ?? 0;
+    return {
+      ...e,
+      weekOverWeekDelta: priorCost > 0 ? ((e.totalCost - priorCost) / priorCost) * 100 : null,
+    };
+  });
+}
+
+// AI Accept 2026-07-15 main v1
 export default async function PortalCostPage({
   searchParams,
 }: {
@@ -32,14 +94,14 @@ export default async function PortalCostPage({
         ? (period as Period)
         : "daily";
 
-  // 带周同比/环比的行数据
-  type RowEntry = LeaderboardEntry & { weekOverWeekDelta?: number | null };
-
   const rows = await (async (): Promise<RowEntry[]> => {
     switch (currentPeriod) {
       case "daily":
+        // hasCustomRange → 导航到特定日（如昨日），与前一天对比
+        if (hasCustomRange) return queryWithComparison("daily", startDate!, endDate!);
         return findDailyLeaderboardWithWeekOverWeek(undefined);
       case "weekly": {
+        if (hasCustomRange) return queryWithComparison("weekly", startDate!, endDate!);
         const result = await findPeriodLeaderboardWithPriorPeriod("weekly", undefined);
         const priorMap = new Map(result.prior.map((e) => [e.userId, e.totalCost]));
         return result.current.map((e) => {
@@ -51,6 +113,7 @@ export default async function PortalCostPage({
         });
       }
       case "monthly": {
+        if (hasCustomRange) return queryWithComparison("monthly", startDate!, endDate!);
         const result = await findPeriodLeaderboardWithPriorPeriod("monthly", undefined);
         const priorMap = new Map(result.prior.map((e) => [e.userId, e.totalCost]));
         return result.current.map((e) => {
@@ -62,6 +125,7 @@ export default async function PortalCostPage({
         });
       }
       case "yearly": {
+        if (hasCustomRange) return queryWithComparison("yearly", startDate!, endDate!);
         const result = await findPeriodLeaderboardWithPriorPeriod("yearly", undefined);
         const priorMap = new Map(result.prior.map((e) => [e.userId, e.totalCost]));
         return result.current.map((e) => {
@@ -96,8 +160,6 @@ export default async function PortalCostPage({
           } as Record<Exclude<Period, "custom">, string>
         )[currentPeriod];
 
-  // 对比列表头文案：daily 与昨日对比，weekly 与上一周对比，monthly 与上一月对比，
-  // 均为相邻同长度周期比较，统一称"环比增长"；allTime/custom 无对比基准，不显示该列
   const comparisonLabel: string | undefined = (
     {
       daily: "环比增长",

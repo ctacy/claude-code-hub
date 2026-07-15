@@ -1,13 +1,18 @@
-// AI Accept 2026-07-14 main v1
+// AI Accept 2026-07-15 main v1
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { JobStatePayload } from "@/jobs/daily-work-summary-runner";
 import type { PeriodJobStatePayload } from "@/jobs/period-work-summary-runner";
-import { getLatestPortalJob } from "@/lib/portal/jobs-status";
 import {
-  findDailyLeaderboard,
-  findMonthlyLeaderboard,
-  findWeeklyLeaderboard,
-} from "@/repository/leaderboard";
+  aggregateDailyTotals,
+  getWeeklyCostProfile,
+  getWeeklyProviderTop,
+} from "@/lib/portal/dashboard-profile";
+import { getLatestPortalJob } from "@/lib/portal/jobs-status";
+import { findDailyLeaderboard, findMonthlyLeaderboard } from "@/repository/leaderboard";
+import { getUserStatisticsFromDB } from "@/repository/statistics";
+import { ProviderTopList } from "./_components/provider-top-list";
+import { WeeklyCostBar } from "./_components/weekly-cost-bar";
+import { WeeklyTrendChart } from "./_components/weekly-trend-chart";
 
 export const dynamic = "force-dynamic";
 
@@ -102,20 +107,28 @@ function PeriodJobCard({ job }: { job: PeriodJobStatePayload | null }) {
 }
 
 export default async function PortalDashboardPage() {
-  const [dailyRows, monthlyRows, weeklyRows, latestSummaryJob, latestPeriodJob] = await Promise.all(
-    [
-      findDailyLeaderboard(),
-      findMonthlyLeaderboard(),
-      findWeeklyLeaderboard(),
-      getLatestPortalJob("summary"),
-      getLatestPortalJob("period-summary"),
-    ]
-  );
+  const [
+    dailyRows,
+    monthlyRows,
+    latestSummaryJob,
+    latestPeriodJob,
+    weeklyCostRows,
+    weeklyTrendRows,
+    weeklyProviderRows,
+  ] = await Promise.all([
+    findDailyLeaderboard(),
+    findMonthlyLeaderboard(),
+    getLatestPortalJob("summary"),
+    getLatestPortalJob("period-summary"),
+    getWeeklyCostProfile(),
+    getUserStatisticsFromDB("7days"),
+    getWeeklyProviderTop(),
+  ]);
 
   const todayCost = dailyRows.reduce((sum, r) => sum + r.totalCost, 0);
   const todayRequests = dailyRows.reduce((sum, r) => sum + r.totalRequests, 0);
   const monthCost = monthlyRows.reduce((sum, r) => sum + r.totalCost, 0);
-  const top5Weekly = weeklyRows.slice(0, 5);
+  const trendData = aggregateDailyTotals(weeklyTrendRows);
 
   return (
     <div className="space-y-6">
@@ -153,31 +166,13 @@ export default async function PortalDashboardPage() {
         <PeriodJobCard job={latestPeriodJob} />
       </div>
 
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <WeeklyCostBar rows={weeklyCostRows} />
+        <WeeklyTrendChart data={trendData} />
+      </div>
+
       <div>
-        <h2 className="mb-3 text-base font-semibold">本周用户消耗 Top 5</h2>
-        <div className="rounded-md border">
-          <div className="grid grid-cols-4 border-b px-4 py-2 text-xs font-medium text-muted-foreground">
-            <span>排名</span>
-            <span>用户</span>
-            <span className="text-right">请求数</span>
-            <span className="text-right">费用 (USD)</span>
-          </div>
-          {top5Weekly.length === 0 ? (
-            <div className="px-4 py-6 text-center text-sm text-muted-foreground">本周暂无数据</div>
-          ) : (
-            top5Weekly.map((row, idx) => (
-              <div
-                key={row.userId}
-                className="grid grid-cols-4 border-b px-4 py-2.5 text-sm last:border-0"
-              >
-                <span className="text-muted-foreground">#{idx + 1}</span>
-                <span className="font-medium">{row.userName}</span>
-                <span className="text-right">{row.totalRequests.toLocaleString("zh-CN")}</span>
-                <span className="text-right font-mono">{formatUsd(row.totalCost)}</span>
-              </div>
-            ))
-          )}
-        </div>
+        <ProviderTopList rows={weeklyProviderRows} />
       </div>
     </div>
   );

@@ -115,10 +115,11 @@ export function CostPeriodBar() {
   const today = formatDate(new Date());
 
   const currentRange = useMemo(() => {
-    if (period === "custom" && startDateParam) {
+    // startDate/endDate 优先——同时覆盖 custom 和导航后的命名 period
+    if (startDateParam) {
       return { startDate: startDateParam, endDate: endDateParam ?? startDateParam };
     }
-    if (period !== "custom") {
+    if (period !== "custom" && period !== "allTime") {
       return getDateRangeForPeriod(period as QuickPeriod);
     }
     return getDateRangeForPeriod("daily");
@@ -132,7 +133,8 @@ export function CostPeriodBar() {
   function applyRange(newPeriod: Period, range?: { startDate: string; endDate: string }) {
     const params = new URLSearchParams();
     params.set("period", newPeriod);
-    if (newPeriod === "custom" && range) {
+    // 始终携带 startDate/endDate（非 allTime），使页面精确知道要查哪段区间
+    if (range && newPeriod !== "allTime") {
       params.set("startDate", range.startDate);
       params.set("endDate", range.endDate);
     }
@@ -140,12 +142,18 @@ export function CostPeriodBar() {
   }
 
   function handleQuickClick(qp: QuickPeriod) {
-    applyRange(qp);
+    // 快捷 tab 不带 startDate/endDate，页面自动计算"当前时段"
+    const params = new URLSearchParams();
+    params.set("period", qp);
+    router.push(`/portal/cost?${params}`);
   }
 
   function handleNavigate(direction: "prev" | "next") {
     const newRange = shiftDateRange(currentRange, direction);
-    applyRange("custom", newRange);
+    // 保留命名 period 类型，确保环比增长列在翻页后继续显示
+    const navPeriod: Period =
+      period !== "custom" && period !== "allTime" ? (period as Period) : "custom";
+    applyRange(navPeriod, newRange);
   }
 
   function handleDateRangeSelect(range: DateRange | undefined) {
