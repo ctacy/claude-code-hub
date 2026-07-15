@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { providers, usageLedger, users } from "@/drizzle/schema";
 import { resolveSystemTimezone } from "@/lib/utils/timezone";
@@ -353,6 +353,57 @@ function buildUserFilterCondition(userFilters?: UserLeaderboardFilters) {
   return tagFilterCondition ?? groupFilterCondition;
 }
 
+/**
+ * 按用户拆分的模型消耗明细，供排行榜展开行使用。
+ * whereConditions 需与主查询保持一致的过滤条件（时间范围、计费口径、用户筛选等）。
+ */
+async function fetchModelStatsByUser(
+  whereConditions: SQL[]
+): Promise<Map<number, UserModelStat[]>> {
+  const systemSettings = await getSystemSettings();
+  const billingModelSource = systemSettings.billingModelSource;
+  const rawModelField =
+    billingModelSource === "original"
+      ? sql<string>`COALESCE(${usageLedger.originalModel}, ${usageLedger.model})`
+      : sql<string>`COALESCE(${usageLedger.model}, ${usageLedger.originalModel})`;
+  const modelField = sql<string | null>`NULLIF(TRIM(${rawModelField}), '')`;
+
+  const modelRows = await db
+    .select({
+      userId: usageLedger.userId,
+      model: modelField,
+      totalRequests: sql<number>`count(*)::double precision`,
+      totalCost: sql<string>`COALESCE(sum(${usageLedger.costUsd}), 0)`,
+      totalTokens: sql<number>`COALESCE(
+        sum(
+          ${usageLedger.inputTokens} +
+          ${usageLedger.outputTokens} +
+          COALESCE(${usageLedger.cacheCreationInputTokens}, 0) +
+          COALESCE(${usageLedger.cacheReadInputTokens}, 0)
+        )::double precision,
+        0::double precision
+      )`,
+    })
+    .from(usageLedger)
+    .innerJoin(users, and(sql`${usageLedger.userId} = ${users.id}`, isNull(users.deletedAt)))
+    .where(and(...whereConditions))
+    .groupBy(usageLedger.userId, modelField)
+    .orderBy(desc(sql`COALESCE(sum(${usageLedger.costUsd}), 0)`));
+
+  const modelStatsByUser = new Map<number, UserModelStat[]>();
+  for (const row of modelRows) {
+    const stats = modelStatsByUser.get(row.userId) ?? [];
+    stats.push({
+      model: row.model,
+      totalRequests: row.totalRequests,
+      totalCost: parseFloat(row.totalCost),
+      totalTokens: row.totalTokens,
+    });
+    modelStatsByUser.set(row.userId, stats);
+  }
+  return modelStatsByUser;
+}
+
 async function findLeaderboardWithTimezone(
   period: LeaderboardPeriod,
   timezone: string,
@@ -402,47 +453,7 @@ async function findLeaderboardWithTimezone(
 
   if (!includeModelStats) return baseEntries;
 
-  const systemSettings = await getSystemSettings();
-  const billingModelSource = systemSettings.billingModelSource;
-  const rawModelField =
-    billingModelSource === "original"
-      ? sql<string>`COALESCE(${usageLedger.originalModel}, ${usageLedger.model})`
-      : sql<string>`COALESCE(${usageLedger.model}, ${usageLedger.originalModel})`;
-  const modelField = sql<string | null>`NULLIF(TRIM(${rawModelField}), '')`;
-
-  const modelRows = await db
-    .select({
-      userId: usageLedger.userId,
-      model: modelField,
-      totalRequests: sql<number>`count(*)::double precision`,
-      totalCost: sql<string>`COALESCE(sum(${usageLedger.costUsd}), 0)`,
-      totalTokens: sql<number>`COALESCE(
-        sum(
-          ${usageLedger.inputTokens} +
-          ${usageLedger.outputTokens} +
-          COALESCE(${usageLedger.cacheCreationInputTokens}, 0) +
-          COALESCE(${usageLedger.cacheReadInputTokens}, 0)
-        )::double precision,
-        0::double precision
-      )`,
-    })
-    .from(usageLedger)
-    .innerJoin(users, and(sql`${usageLedger.userId} = ${users.id}`, isNull(users.deletedAt)))
-    .where(and(...whereConditions))
-    .groupBy(usageLedger.userId, modelField)
-    .orderBy(desc(sql`COALESCE(sum(${usageLedger.costUsd}), 0)`));
-
-  const modelStatsByUser = new Map<number, UserModelStat[]>();
-  for (const row of modelRows) {
-    const stats = modelStatsByUser.get(row.userId) ?? [];
-    stats.push({
-      model: row.model,
-      totalRequests: row.totalRequests,
-      totalCost: parseFloat(row.totalCost),
-      totalTokens: row.totalTokens,
-    });
-    modelStatsByUser.set(row.userId, stats);
-  }
+  const modelStatsByUser = await fetchModelStatsByUser(whereConditions);
 
   return baseEntries.map((entry) => ({
     ...entry,
@@ -460,7 +471,8 @@ export interface LeaderboardEntryWithDelta extends LeaderboardEntry {
 }
 
 export async function findDailyLeaderboardWithWeekOverWeek(
-  userFilters?: UserLeaderboardFilters
+  userFilters?: UserLeaderboardFilters,
+  includeModelStats?: boolean
 ): Promise<LeaderboardEntryWithDelta[]> {
   const timezone = await resolveSystemTimezone();
   const tz = timezone;
@@ -504,7 +516,7 @@ export async function findDailyLeaderboardWithWeekOverWeek(
       desc(sql`COALESCE(SUM(CASE WHEN ${isCurrent} THEN ${usageLedger.costUsd} ELSE 0 END), 0)`)
     );
 
-  return rows.map((row) => {
+  const entries: LeaderboardEntryWithDelta[] = rows.map((row) => {
     const current = parseFloat(row.currentCost);
     const prior = parseFloat(row.priorCost);
     return {
@@ -516,6 +528,16 @@ export async function findDailyLeaderboardWithWeekOverWeek(
       weekOverWeekDelta: prior > 0 ? ((current - prior) / prior) * 100 : null,
     };
   });
+
+  if (!includeModelStats) return entries;
+
+  // modelStats 只统计"当期"部分，与其它周期口径一致
+  const modelStatsByUser = await fetchModelStatsByUser([LEDGER_BILLING_CONDITION, isCurrent]);
+
+  return entries.map((entry) => ({
+    ...entry,
+    modelStats: modelStatsByUser.get(entry.userId) ?? [],
+  }));
 }
 
 /**
@@ -532,7 +554,8 @@ export interface PeriodComparisonResult {
 
 export async function findPeriodLeaderboardWithPriorPeriod(
   periodType: PeriodCompareType,
-  userFilters?: UserLeaderboardFilters
+  userFilters?: UserLeaderboardFilters,
+  includeModelStats?: boolean
 ): Promise<PeriodComparisonResult> {
   const timezone = await resolveSystemTimezone();
   const tz = timezone;
@@ -541,7 +564,8 @@ export async function findPeriodLeaderboardWithPriorPeriod(
     periodType === "weekly" ? "weekly" : periodType === "monthly" ? "monthly" : "yearly",
     tz,
     undefined,
-    userFilters
+    userFilters,
+    includeModelStats
   );
 
   const nowLocal = sql`CURRENT_TIMESTAMP AT TIME ZONE ${tz}`;

@@ -32,6 +32,7 @@ Claude Code Hub 通过 Next.js 15 + Hono + PostgreSQL + Redis 组合，实现 Cl
 - 💰 **价格表管理**：分页查询 + SQL 优化，支持搜索防抖、LiteLLM 同步，千级模型也能快速检索。
 - 🔁 **Session 管理**：5 分钟上下文缓存，记录决策链，避免频繁切换供应商并保留全链路审计。
 - 🔄 **OpenAI 兼容端点**：支持 `/v1/chat/completions`（OpenAI 兼容格式），工具调用与 reasoning 字段透传，严格同格式路由，无跨格式转换。
+- 🖥️ **用户门户**：独立于管理后台的只读门户（`/portal`），用户名 + 密码登录，提供费用总览、AI 工作总结、用户成本榜、请求记录查阅与自定义提示词等功能。
 
 ## ⚡️ 快速开始 Quick Start
 
@@ -135,6 +136,7 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 启动成功后：
 
 - **管理后台**：`http://localhost:23000`（使用 `.env` 中的 `ADMIN_TOKEN` 登录）
+- **用户门户**：`http://localhost:23000/portal`（使用 `.env` 中的 `PORTAL_USERNAME` / `PORTAL_PASSWORD` 登录）
 - **API 文档（Scalar UI）**：`http://localhost:23000/api/actions/scalar`
 - **API 文档（Swagger UI）**：`http://localhost:23000/api/actions/docs`
 - **公开状态 API**：[docs/public-status-api.md](docs/public-status-api.md)
@@ -144,6 +146,29 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 > - 如需修改端口，请编辑 `docker-compose.yml` 中的 `ports` 配置。
 > - 如需通过脚本或编程调用 API，请参考 [API 认证指南](docs/api-authentication-guide.md)。
 > - 如需接入无需认证的公开状态接口，请参考 [Public Status API](docs/public-status-api.md)。
+
+## 🖥️ 用户门户 Portal
+
+门户（`/portal`）是独立于管理后台的只读入口，与 `ADMIN_TOKEN` 认证体系完全隔离，使用用户名 + 密码登录。需在 `.env` 中配置 `PORTAL_USERNAME` 和 `PORTAL_PASSWORD`，留空则门户不可用（返回 503）。
+
+**前置条件**：开启 `ENABLE_IO_BODY_LOGGING=true` 才能记录请求体，AI 工作总结功能依赖该开关。
+
+### 门户功能一览
+
+| 路径 | 功能 | 说明 |
+|------|------|------|
+| `/portal/dashboard` | 概览仪表盘 | 今日 / 本月费用与请求数、周成本柱状图、7 天趋势折线图、日报与周期汇总任务状态 |
+| `/portal/summaries` | AI 工作总结 | 按用户按日 / 周 / 月 / 年粒度查看 AI 生成的工作总结，支持环比对比，可手动触发重新汇总 |
+| `/portal/cost` | 用户成本榜 | 按费用降序排名，支持今日 / 本周 / 本月 / 本年 / 全部 / 自定义区间，带环比增长列 |
+| `/portal/io-logs` | 请求记录 | 实时请求日志查阅（只读） |
+| `/portal/settings` | 门户设置 | 配置工作总结的 Provider 分组优先级与自定义 AI 提示词 |
+
+### AI 工作总结机制
+
+- **触发时机**：每天 0:30（按 `TZ` 时区）自动生成前一日总结；也可在 `/portal/summaries` 页面手动触发。
+- **粒度**：日报 → 周报 → 月报 → 年报，逐级汇总；周期报基于日报拼接生成。
+- **自定义提示词**：在 `/portal/settings` 填写提示词模板，可用变量：`{userName}`、`{date}`、`{requestCount}`、`{logsText}`、`{charLimit}`。字数上限随粒度阶梯变化（日 500 / 周 1000 / 月 1500 / 年 2000），留空使用内置默认。
+- **Provider 分组**：可配置多组 Provider 按优先级穷举，未配置时自动使用内置 Claude → Codex 兜底链。
 
 ## 🖼️ 界面预览 Screenshots
 
@@ -290,6 +315,11 @@ cch doctor            # 诊断集群与部署状态
 | `APP_PORT`                                 | `23000`                  | 生产端口，可被容器或进程管理器覆盖。                                         |
 | `APP_URL`                                  | 空                       | 设置后 OpenAPI 文档 `servers` 将展示正确域名/端口。                          |
 | `API_TEST_TIMEOUT_MS`                      | `15000`                  | 供应商 API 测试超时时间（毫秒，范围 5000-120000），跨境网络可适当提高。      |
+| `ENABLE_IO_BODY_LOGGING`                   | `true`                   | 记录请求 / 响应体（IO 日志），门户 AI 工作总结依赖此开关；关闭后无法生成总结。 |
+| `PORTAL_USERNAME`                          | 空（门户不可用）         | 用户门户登录用户名；留空则 `/portal` 返回 503。                              |
+| `PORTAL_PASSWORD`                          | 空（门户不可用）         | 用户门户登录密码（明文比对，请确保 `.env` 权限受控，不要提交到版本控制）。   |
+| `PORTAL_SESSION_TTL_SECONDS`               | `43200`（12 小时）       | 门户会话 Cookie 过期时间（秒）。                                             |
+| `TZ`                                       | `Asia/Shanghai`          | 时区，影响定时任务触发时间（如每日 0:30 工作总结任务、日志清理任务等）。     |
 
 > 布尔变量支持 `true/false` 或 `1/0`；在 `.env` 文件里写成带引号形式也没问题（dotenv 会解析并去掉引号）。更多字段参考 `.env.example`。
 

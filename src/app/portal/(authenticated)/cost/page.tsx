@@ -99,10 +99,10 @@ export default async function PortalCostPage({
       case "daily":
         // hasCustomRange → 导航到特定日（如昨日），与前一天对比
         if (hasCustomRange) return queryWithComparison("daily", startDate!, endDate!);
-        return findDailyLeaderboardWithWeekOverWeek(undefined);
+        return findDailyLeaderboardWithWeekOverWeek(undefined, true);
       case "weekly": {
         if (hasCustomRange) return queryWithComparison("weekly", startDate!, endDate!);
-        const result = await findPeriodLeaderboardWithPriorPeriod("weekly", undefined);
+        const result = await findPeriodLeaderboardWithPriorPeriod("weekly", undefined, true);
         const priorMap = new Map(result.prior.map((e) => [e.userId, e.totalCost]));
         return result.current.map((e) => {
           const prior = priorMap.get(e.userId) ?? 0;
@@ -114,7 +114,7 @@ export default async function PortalCostPage({
       }
       case "monthly": {
         if (hasCustomRange) return queryWithComparison("monthly", startDate!, endDate!);
-        const result = await findPeriodLeaderboardWithPriorPeriod("monthly", undefined);
+        const result = await findPeriodLeaderboardWithPriorPeriod("monthly", undefined, true);
         const priorMap = new Map(result.prior.map((e) => [e.userId, e.totalCost]));
         return result.current.map((e) => {
           const prior = priorMap.get(e.userId) ?? 0;
@@ -126,7 +126,7 @@ export default async function PortalCostPage({
       }
       case "yearly": {
         if (hasCustomRange) return queryWithComparison("yearly", startDate!, endDate!);
-        const result = await findPeriodLeaderboardWithPriorPeriod("yearly", undefined);
+        const result = await findPeriodLeaderboardWithPriorPeriod("yearly", undefined, true);
         const priorMap = new Map(result.prior.map((e) => [e.userId, e.totalCost]));
         return result.current.map((e) => {
           const prior = priorMap.get(e.userId) ?? 0;
