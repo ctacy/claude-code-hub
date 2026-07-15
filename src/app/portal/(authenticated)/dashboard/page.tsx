@@ -2,15 +2,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { JobStatePayload } from "@/jobs/daily-work-summary-runner";
 import type { PeriodJobStatePayload } from "@/jobs/period-work-summary-runner";
-import {
-  aggregateDailyTotals,
-  getWeeklyCostProfile,
-  getWeeklyProviderTop,
-} from "@/lib/portal/dashboard-profile";
+import { aggregateDailyTotals, getWeeklyCostProfile } from "@/lib/portal/dashboard-profile";
 import { getLatestPortalJob } from "@/lib/portal/jobs-status";
 import { findDailyLeaderboard, findMonthlyLeaderboard } from "@/repository/leaderboard";
 import { getUserStatisticsFromDB } from "@/repository/statistics";
-import { ProviderTopList } from "./_components/provider-top-list";
 import { WeeklyCostBar } from "./_components/weekly-cost-bar";
 import { WeeklyTrendChart } from "./_components/weekly-trend-chart";
 
@@ -114,7 +109,6 @@ export default async function PortalDashboardPage() {
     latestPeriodJob,
     weeklyCostRows,
     weeklyTrendRows,
-    weeklyProviderRows,
   ] = await Promise.all([
     findDailyLeaderboard(),
     findMonthlyLeaderboard(),
@@ -122,7 +116,6 @@ export default async function PortalDashboardPage() {
     getLatestPortalJob("period-summary"),
     getWeeklyCostProfile(),
     getUserStatisticsFromDB("7days"),
-    getWeeklyProviderTop(),
   ]);
 
   const todayCost = dailyRows.reduce((sum, r) => sum + r.totalCost, 0);
@@ -169,10 +162,6 @@ export default async function PortalDashboardPage() {
       <div className="flex flex-col gap-4">
         <WeeklyCostBar rows={weeklyCostRows} />
         <WeeklyTrendChart data={trendData} />
-      </div>
-
-      <div>
-        <ProviderTopList rows={weeklyProviderRows} />
       </div>
     </div>
   );

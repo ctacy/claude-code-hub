@@ -45,7 +45,7 @@ export function WeeklyTrendChart({
             </div>
             <ChartContainer
               config={{
-                cost: { label: "费用", color: "hsl(var(--chart-1))" },
+                cost: { label: "费用", color: "var(--chart-1)" },
               }}
               className="aspect-auto h-[180px] w-full"
             >

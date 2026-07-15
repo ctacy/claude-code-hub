@@ -37,8 +37,8 @@ export function WeeklyCostBar({
   }));
 
   const chartConfig = {
-    current: { label: "本周", color: "hsl(var(--chart-1))" },
-    prior: { label: "上周", color: "hsl(var(--chart-2))" },
+    current: { label: "本周", color: "var(--chart-1)" },
+    prior: { label: "上周", color: "var(--chart-2)" },
   };
 
   // 用户名较多时旋转 X 轴标签，留出高度

@@ -11,7 +11,7 @@ import { logger } from "@/lib/logger";
 import { getRedisClient } from "@/lib/redis";
 import { type RunResult, runDailyWorkSummary } from "./daily-work-summary";
 
-const JOB_TTL_SECONDS = 3600; // 1 小时够追状态
+const JOB_TTL_SECONDS = 14 * 24 * 3600; // 14 天，够仪表盘展示最近一次运行状态
 const JOB_KEY = (jobId: string) => `portal:summary-job:${jobId}`;
 
 export type JobStatus = "running" | "done" | "failed";
