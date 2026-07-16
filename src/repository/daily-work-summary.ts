@@ -158,6 +158,31 @@ export async function listLatestSummariesPerUser(): Promise<DailySummaryRow[]> {
   return rows.map((r) => r.daily_work_summary as DailySummaryRow);
 }
 
+// AI Accept 2026-07-16 main v1
+export interface LatestDailySummaryRun {
+  date: string;
+  userCount: number;
+  generatedAt: Date;
+}
+
+/**
+ * Returns stats for the most recently generated daily summary batch.
+ * Used by the portal dashboard card instead of the Redis job-state key.
+ */
+export async function getLatestDailySummaryRun(): Promise<LatestDailySummaryRun | null> {
+  const [row] = await db
+    .select({
+      date: dailyWorkSummary.date,
+      userCount: sql<number>`cast(count(*) as int)`.as("userCount"),
+      generatedAt: sql<Date>`MAX(${dailyWorkSummary.generatedAt})`.as("generatedAt"),
+    })
+    .from(dailyWorkSummary)
+    .groupBy(dailyWorkSummary.date)
+    .orderBy(desc(dailyWorkSummary.date))
+    .limit(1);
+  return row ?? null;
+}
+
 export async function listAllUsersWithSummaryByDate(
   date: string
 ): Promise<Array<DailySummaryRow | { userName: string; date: string; requestCount: null }>> {

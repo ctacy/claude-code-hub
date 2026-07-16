@@ -126,6 +126,33 @@ export async function listPeriodSummariesByPeriod(
   return rows as PeriodSummaryRow[];
 }
 
+// AI Accept 2026-07-16 main v1
+export interface LatestPeriodSummaryRun {
+  periodType: "week" | "month" | "year";
+  periodStart: string;
+  userCount: number;
+  updatedAt: Date | null;
+}
+
+/**
+ * Returns stats for the most recently updated period summary batch (any type).
+ * Used by the portal dashboard card instead of the Redis job-state key.
+ */
+export async function getLatestPeriodSummaryRun(): Promise<LatestPeriodSummaryRun | null> {
+  const [row] = await db
+    .select({
+      periodType: periodWorkSummary.periodType,
+      periodStart: periodWorkSummary.periodStart,
+      userCount: sql<number>`cast(count(*) as int)`.as("userCount"),
+      updatedAt: sql<Date | null>`MAX(${periodWorkSummary.updatedAt})`.as("updatedAt"),
+    })
+    .from(periodWorkSummary)
+    .groupBy(periodWorkSummary.periodType, periodWorkSummary.periodStart)
+    .orderBy(desc(sql`MAX(${periodWorkSummary.updatedAt})`))
+    .limit(1);
+  return row ?? null;
+}
+
 export async function listLatestPeriodSummariesPerUser(
   periodType: "week" | "month" | "year"
 ): Promise<PeriodSummaryRow[]> {
