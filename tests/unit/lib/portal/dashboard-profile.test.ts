@@ -87,6 +87,63 @@ describe("aggregateDailyTotals", () => {
     expect(result.totalCost).toBe(0);
     expect(result.totalRequests).toBe(0);
   });
+
+  // AI Accept 2026-07-16 main v1
+  it("hour 粒度按小时桶聚合（今日走势），同日多小时不塌缩", () => {
+    // 用本地时间构造，避免 getHours() 因运行机器时区偏移导致断言漂移
+    const rows = [
+      {
+        user_id: 1,
+        user_name: "alice",
+        date: new Date(2026, 6, 16, 8, 0, 0),
+        api_calls: 2,
+        total_cost: "1.0",
+      },
+      {
+        user_id: 2,
+        user_name: "bob",
+        date: new Date(2026, 6, 16, 8, 0, 0),
+        api_calls: 1,
+        total_cost: "0.5",
+      },
+      {
+        user_id: 1,
+        user_name: "alice",
+        date: new Date(2026, 6, 16, 9, 0, 0),
+        api_calls: 3,
+        total_cost: "2.0",
+      },
+    ];
+
+    const result = aggregateDailyTotals(rows, "hour");
+
+    // 两个小时桶保持独立，而非塌缩为单日一点
+    expect(result.series.length).toBe(2);
+    expect(result.series.map((p) => p.date)).toEqual(["2026-07-16 08", "2026-07-16 09"]);
+    expect(result.series[0]).toEqual({
+      date: "2026-07-16 08",
+      totalCost: 1.5,
+      totalRequests: 3,
+    });
+    expect(result.totalCost).toBe(3.5);
+    expect(result.totalRequests).toBe(6);
+  });
+
+  it("hour 粒度接受 ISO 字符串并归一到 YYYY-MM-DD HH", () => {
+    const rows = [
+      {
+        user_id: 1,
+        user_name: "alice",
+        date: "2026-07-16T08:30:00Z",
+        api_calls: 1,
+        total_cost: "1",
+      },
+    ];
+
+    const result = aggregateDailyTotals(rows, "hour");
+
+    expect(result.series[0].date).toBe("2026-07-16 08");
+  });
 });
 
 describe("normalizeProviderRows", () => {

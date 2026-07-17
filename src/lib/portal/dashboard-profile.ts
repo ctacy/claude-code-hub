@@ -63,19 +63,29 @@ export interface DailyTrendResult {
   totalRequests: number;
 }
 
-export function aggregateDailyTotals(rows: DatabaseStatRow[]): DailyTrendResult {
-  const byDate = new Map<string, { cost: number; calls: number }>();
+// AI Accept 2026-07-16 main v1
+/**
+ * 按时间桶聚合费用/请求走势。
+ * - "hour" 粒度（今日）：桶为 "YYYY-MM-DD HH"，24 个点
+ * - "day" 粒度（近 7 日/近 30 日/本月）：桶为 "YYYY-MM-DD"
+ * 桶粒度须与 getUserStatisticsFromDB 的 bucketExpr 保持一致，否则会把多桶塌缩成一点。
+ */
+export function aggregateDailyTotals(
+  rows: DatabaseStatRow[],
+  bucket: "hour" | "day" = "day"
+): DailyTrendResult {
+  const byKey = new Map<string, { cost: number; calls: number }>();
   for (const row of rows) {
     // 数据库层 date 实际是 Date 对象；规格定义是 string，这里双适配
-    const dateStr = normalizeDate(row.date);
-    if (!dateStr) continue;
-    const acc = byDate.get(dateStr) ?? { cost: 0, calls: 0 };
+    const key = bucket === "hour" ? normalizeHour(row.date) : normalizeDate(row.date);
+    if (!key) continue;
+    const acc = byKey.get(key) ?? { cost: 0, calls: 0 };
     acc.cost += toNumber(row.total_cost);
     acc.calls += row.api_calls ?? 0;
-    byDate.set(dateStr, acc);
+    byKey.set(key, acc);
   }
 
-  const series: DailyTrendPoint[] = Array.from(byDate.entries())
+  const series: DailyTrendPoint[] = Array.from(byKey.entries())
     .map(([date, agg]) => ({
       date,
       totalCost: round4(agg.cost),
@@ -142,6 +152,24 @@ function normalizeDate(d: unknown): string | null {
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
+  }
+  return null;
+}
+
+// AI Accept 2026-07-16 main v1
+/** 归一为 "YYYY-MM-DD HH"（今日按小时聚合时使用） */
+function normalizeHour(d: unknown): string | null {
+  if (!d) return null;
+  if (typeof d === "string") {
+    const m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2})/.exec(d);
+    return m ? `${m[1]} ${m[2]}` : null;
+  }
+  if (d instanceof Date && !Number.isNaN(d.getTime())) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd} ${hh}`;
   }
   return null;
 }
