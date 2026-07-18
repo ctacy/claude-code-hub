@@ -1,19 +1,14 @@
+// AI Accept 2026-07-18 main v1
 "use client";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function SummaryCell({ text }: { text: string }) {
-  const truncated = text.length > 50 ? `${text.slice(0, 50)}…` : text;
-
-  if (text.length <= 50) {
-    return <span className="break-words">{text}</span>;
-  }
-
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="cursor-default break-words">{truncated}</span>
+          <span className="cursor-default line-clamp-1 break-words">{text}</span>
         </TooltipTrigger>
         <TooltipContent
           side="top"
