@@ -4,6 +4,7 @@ import { and, desc, eq, gte, ilike, lt, lte, or } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { requestIoLog } from "@/drizzle/io-log-schema";
 import { messageRequest } from "@/drizzle/schema";
+import type { ProviderChainItem } from "@/types/message";
 
 export type IoLogRow = {
   id: number;
@@ -16,6 +17,7 @@ export type IoLogRow = {
   statusCode: number | null;
   userName: string | null;
   keyName: string | null;
+  providerChain: ProviderChainItem[] | null;
 };
 
 export type IoLogListResult = {
@@ -74,6 +76,7 @@ export async function listIoLogs(params: {
       statusCode: messageRequest.statusCode,
       userName: requestIoLog.userName,
       keyName: requestIoLog.keyName,
+      providerChain: messageRequest.providerChain,
     })
     .from(requestIoLog)
     .leftJoin(messageRequest, eq(requestIoLog.requestId, messageRequest.id))

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { IoLogItem } from "@/lib/api-client/v1/actions/io-logs";
 import { formatDate } from "@/lib/utils/date-format";
+import { getFinalProviderName } from "@/lib/utils/provider-chain-formatter";
 
 interface IoLogDetailSheetProps {
   log: IoLogItem | null;
@@ -57,6 +58,17 @@ export function IoLogDetailSheet({ log, open, onOpenChange }: IoLogDetailSheetPr
                   {log.keyName}
                 </Badge>
               )}
+              {(() => {
+                const finalProvider = getFinalProviderName(log.providerChain);
+                return finalProvider ? (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] border-blue-500/50 text-blue-600 dark:text-blue-400"
+                  >
+                    {finalProvider}
+                  </Badge>
+                ) : null;
+              })()}
               {(log.originalModel ?? log.model) && (
                 <Badge variant="secondary" className="text-[10px]">
                   {log.originalModel ?? log.model}
