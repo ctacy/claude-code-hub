@@ -10,6 +10,7 @@
     "time": "時刻",
     "requestId": "リクエスト ID",
     "user": "ユーザー",
+    "provider": "プロバイダー",
     "token": "キー",
     "model": "モデル",
     "status": "ステータス",

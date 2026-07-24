@@ -7,8 +7,9 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
   output: "standalone",
 
-  // 转译 ESM 模块（@lobehub/icons 需要）
-  transpilePackages: ["@lobehub/icons"],
+  // 转译 ESM 模块（@lobehub/icons 需要；react-day-picker v10 在模块顶层调用 createContext，
+  // 必须转译以确保 SSR chunk 评估时 React 实例已就绪）
+  transpilePackages: ["@lobehub/icons", "react-day-picker"],
 
   // 排除服务端专用包（避免打包到客户端）
   // bull 和相关依赖只在服务端使用，包含 Node.js 原生模块

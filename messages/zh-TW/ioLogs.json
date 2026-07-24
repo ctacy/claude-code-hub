@@ -10,6 +10,7 @@
     "time": "時間",
     "requestId": "請求 ID",
     "user": "使用者",
+    "provider": "服務商",
     "token": "密鑰",
     "model": "模型",
     "status": "狀態",

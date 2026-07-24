@@ -24,6 +24,7 @@ type FetchUsersFn = typeof searchUsersForFilter;
 
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils/date-format";
+import { getFinalProviderName } from "@/lib/utils/provider-chain-formatter";
 import { IoLogDetailSheet } from "./io-log-detail-sheet";
 
 const BATCH_SIZE = 50;
@@ -271,10 +272,11 @@ export function IoLogsView({
             <div className="flex-[0.9] min-w-[150px] pl-3 truncate">{t("columns.time")}</div>
             <div className="flex-[0.7] min-w-[60px] px-1.5 truncate">{t("columns.requestId")}</div>
             <div className="flex-[0.5] min-w-[60px] px-1.5 truncate">{t("columns.user")}</div>
+            <div className="flex-[0.8] min-w-[100px] px-1.5 truncate">{t("columns.provider")}</div>
             <div className="flex-[0.5] min-w-[60px] px-1.5 truncate">{t("columns.token")}</div>
             <div className="flex-[1.0] min-w-[120px] px-1.5 truncate">{t("columns.model")}</div>
             <div className="flex-[0.5] min-w-[60px] px-1.5 truncate">{t("columns.status")}</div>
-            <div className="flex-[2.5] min-w-[200px] px-1.5 pr-3 truncate">
+            <div className="flex-[2.0] min-w-[200px] px-1.5 pr-3 truncate">
               {t("columns.requestPreview")}
             </div>
           </div>
@@ -352,6 +354,24 @@ export function IoLogsView({
                       {log.userName ?? <span className="text-muted-foreground">—</span>}
                     </div>
                     <div
+                      className="flex-[0.8] min-w-[100px] px-1.5 truncate"
+                      title={getFinalProviderName(log.providerChain) ?? ""}
+                    >
+                      {(() => {
+                        const finalProvider = getFinalProviderName(log.providerChain);
+                        return finalProvider ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] max-w-full truncate border-blue-500/50 text-blue-600 dark:text-blue-400"
+                          >
+                            {finalProvider}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        );
+                      })()}
+                    </div>
+                    <div
                       className="flex-[0.5] min-w-[60px] px-1.5 text-xs truncate text-muted-foreground"
                       title={log.keyName ?? ""}
                     >
@@ -379,7 +399,7 @@ export function IoLogsView({
                       )}
                     </div>
                     <div
-                      className="flex-[2.5] min-w-[200px] px-1.5 pr-3 font-mono text-xs truncate text-muted-foreground"
+                      className="flex-[2.0] min-w-[200px] px-1.5 pr-3 font-mono text-xs truncate text-muted-foreground"
                       title={
                         log.requestBody ? JSON.stringify(log.requestBody).slice(0, 200) : undefined
                       }

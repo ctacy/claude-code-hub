@@ -10,6 +10,7 @@
     "time": "时间",
     "requestId": "请求 ID",
     "user": "用户",
+    "provider": "服务商",
     "token": "密钥",
     "model": "模型",
     "status": "状态",
