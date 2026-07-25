@@ -7,7 +7,7 @@ import { defaultLocale } from "@/i18n/config";
 import { AppProviders } from "../providers";
 
 export const metadata = {
-  title: "AI使用分析",
+  title: "使用总结",
 };
 
 // Portal segment lives outside the `[locale]` route tree, so it has no intl
