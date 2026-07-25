@@ -52,6 +52,10 @@ export const UsageLogExportJobParamSchema = z.object({
   jobId: z.string().min(1).describe("Export job id."),
 });
 
+export const UsageLogIdParamSchema = z.object({
+  logId: z.coerce.number().int().positive().describe("Usage log record id (request id)."),
+});
+
 export const UsageLogSessionSuggestionsQuerySchema = z.object({
   term: z.string().optional().describe("Session id search term."),
   q: z.string().optional().describe("Alias for the session id search term."),

@@ -11,6 +11,7 @@ import { parseHonoJsonBody } from "@/lib/api/v1/_shared/request-body";
 import { jsonResponse } from "@/lib/api/v1/_shared/response-helpers";
 import {
   UsageLogExportJobParamSchema,
+  UsageLogIdParamSchema,
   UsageLogSessionSuggestionsQuerySchema,
   type UsageLogsActionQueryInput,
   UsageLogsExportCreateSchema,
@@ -149,6 +150,16 @@ export async function downloadUsageLogsExport(c: Context): Promise<Response> {
       "Content-Disposition": `attachment; filename="${download.filename}"`,
     },
   });
+}
+
+export async function getUsageLogById(c: Context): Promise<Response> {
+  const params = UsageLogIdParamSchema.safeParse({ logId: c.req.param("logId") });
+  if (!params.success) return fromZodError(params.error, new URL(c.req.url).pathname);
+  const actions = await import("@/actions/usage-logs");
+  return actionJson(
+    c,
+    await callAction(c, actions.getUsageLogById, [params.data.logId] as never[], c.get("auth"))
+  );
 }
 
 function parseUsageLogsQuery(c: Context): UsageLogsActionQueryInput | Response {

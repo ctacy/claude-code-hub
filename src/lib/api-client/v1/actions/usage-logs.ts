@@ -1,5 +1,5 @@
 import type { UsageLogsExportStatus } from "@/actions/usage-logs";
-import type { UsageLogSummary, UsageLogsBatchResult } from "@/repository/usage-logs";
+import type { UsageLogRow, UsageLogSummary, UsageLogsBatchResult } from "@/repository/usage-logs";
 import {
   apiGet,
   apiPost,
@@ -11,6 +11,10 @@ import {
 } from "./_compat";
 
 export type { UsageLogsExportStatus } from "@/actions/usage-logs";
+
+export function getUsageLogById(id: number) {
+  return toActionResult(apiGet<UsageLogRow>(`/api/v1/usage-logs/${encodeURIComponent(id)}`));
+}
 
 export function getUsageLogs(params?: object) {
   return toActionResult(

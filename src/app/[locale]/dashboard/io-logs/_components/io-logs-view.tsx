@@ -17,12 +17,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useVirtualizedInfiniteList } from "@/hooks/use-virtualized-infinite-list";
 import { getIoLogsBatch, type IoLogItem } from "@/lib/api-client/v1/actions/io-logs";
+import { getUsageLogById } from "@/lib/api-client/v1/actions/usage-logs";
 import { searchUsersForFilter } from "@/lib/api-client/v1/actions/users";
 
 type FetchLogsFn = typeof getIoLogsBatch;
 type FetchUsersFn = typeof searchUsersForFilter;
 
-import { getUsageLogById } from "@/actions/usage-logs";
 import { ErrorDetailsDialog } from "@/app/[locale]/dashboard/logs/_components/error-details-dialog";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils/date-format";

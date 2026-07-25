@@ -7,6 +7,7 @@ import {
   NumberListResponseSchema,
   StringListResponseSchema,
   UsageLogExportJobParamSchema,
+  UsageLogIdParamSchema,
   UsageLogSessionSuggestionsQuerySchema,
   UsageLogsExportCreateSchema,
   UsageLogsQuerySchema,
@@ -18,6 +19,7 @@ import {
   getFilterOptions,
   getModelList,
   getStatusCodeList,
+  getUsageLogById,
   getUsageLogsExportStatus,
   getUsageLogsStats,
   listUsageLogs,
@@ -279,4 +281,30 @@ usageLogsRouter.openapi(
     },
   }),
   downloadUsageLogsExport as never
+);
+
+// Dynamic `{logId}` route is registered last so it never shadows the static
+// sub-paths above (e.g. /usage-logs/stats, /usage-logs/models). Hono's
+// RegExpRouter already prioritizes static segments, but explicit ordering keeps
+// the intent obvious and router-version independent.
+usageLogsRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/usage-logs/{logId}",
+    middleware: requireAuth("read"),
+    tags: ["Usage Logs"],
+    summary: "Get usage log by id",
+    description: "Returns a single usage log record by request id.",
+    "x-required-access": "read",
+    security,
+    request: { params: UsageLogIdParamSchema },
+    responses: {
+      200: {
+        description: "Usage log detail.",
+        content: { "application/json": { schema: GenericUsageLogResponseSchema } },
+      },
+      ...problemResponses,
+    },
+  }),
+  getUsageLogById as never
 );
