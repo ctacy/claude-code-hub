@@ -22,9 +22,12 @@ import { searchUsersForFilter } from "@/lib/api-client/v1/actions/users";
 type FetchLogsFn = typeof getIoLogsBatch;
 type FetchUsersFn = typeof searchUsersForFilter;
 
+import { getUsageLogById } from "@/actions/usage-logs";
+import { ErrorDetailsDialog } from "@/app/[locale]/dashboard/logs/_components/error-details-dialog";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/utils/date-format";
 import { getFinalProviderName } from "@/lib/utils/provider-chain-formatter";
+import type { UsageLogRow } from "@/repository/usage-logs";
 import { IoLogDetailSheet } from "./io-log-detail-sheet";
 
 const BATCH_SIZE = 50;
@@ -63,6 +66,28 @@ export function IoLogsView({
   const [detailOpen, setDetailOpen] = useState(false);
   // AI Accept 2026-07-15 main v1
   const [autoRefresh, setAutoRefresh] = useState(defaultAutoRefresh);
+  // 请求详情（ErrorDetailsDialog）状态：按 requestId 懒加载
+  const [usageLogDetail, setUsageLogDetail] = useState<UsageLogRow | null>(null);
+  const [usageLogDetailOpen, setUsageLogDetailOpen] = useState(false);
+  const [usageLogDetailLoading, setUsageLogDetailLoading] = useState<number | null>(null);
+
+  const openRequestDetail = useCallback(
+    async (requestId: number, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (usageLogDetailLoading === requestId) return;
+      setUsageLogDetailLoading(requestId);
+      try {
+        const result = await getUsageLogById(requestId);
+        if (result.ok) {
+          setUsageLogDetail(result.data);
+          setUsageLogDetailOpen(true);
+        }
+      } finally {
+        setUsageLogDetailLoading(null);
+      }
+    },
+    [usageLogDetailLoading]
+  );
 
   // Filter inputs (draft) vs applied filters (drive the query)
   const [userNameInput, setUserNameInput] = useState("");
@@ -344,8 +369,18 @@ export function IoLogsView({
                     <div className="flex-[0.9] min-w-[150px] font-mono text-xs pl-3 truncate">
                       {formatDate(log.createdAt, "yyyy-MM-dd HH:mm:ss", locale)}
                     </div>
-                    <div className="flex-[0.7] min-w-[60px] px-1.5 font-mono text-xs truncate text-muted-foreground">
-                      #{log.requestId}
+                    <div
+                      className="flex-[0.7] min-w-[60px] px-1.5 font-mono text-xs truncate"
+                      onClick={(e) => void openRequestDetail(log.requestId, e)}
+                      title={`#${log.requestId} — 点击查看请求详情`}
+                    >
+                      {usageLogDetailLoading === log.requestId ? (
+                        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                      ) : (
+                        <span className="text-primary underline underline-offset-2 cursor-pointer hover:text-primary/70 transition-colors">
+                          #{log.requestId}
+                        </span>
+                      )}
                     </div>
                     <div
                       className="flex-[0.5] min-w-[60px] px-1.5 text-xs truncate"
@@ -415,6 +450,47 @@ export function IoLogsView({
       </div>
 
       <IoLogDetailSheet log={selectedLog} open={detailOpen} onOpenChange={setDetailOpen} />
+
+      {usageLogDetail && (
+        <ErrorDetailsDialog
+          statusCode={usageLogDetail.statusCode}
+          errorMessage={usageLogDetail.errorMessage}
+          providerChain={usageLogDetail.providerChain}
+          sessionId={usageLogDetail.sessionId}
+          requestSequence={usageLogDetail.requestSequence}
+          blockedBy={usageLogDetail.blockedBy}
+          blockedReason={usageLogDetail.blockedReason}
+          originalModel={usageLogDetail.originalModel}
+          currentModel={usageLogDetail.model}
+          actualResponseModel={usageLogDetail.actualResponseModel}
+          userAgent={usageLogDetail.userAgent}
+          clientIp={usageLogDetail.clientIp}
+          messagesCount={usageLogDetail.messagesCount}
+          endpoint={usageLogDetail.endpoint}
+          specialSettings={usageLogDetail.specialSettings}
+          inputTokens={usageLogDetail.inputTokens}
+          outputTokens={usageLogDetail.outputTokens}
+          cacheCreationInputTokens={usageLogDetail.cacheCreationInputTokens}
+          cacheCreation5mInputTokens={usageLogDetail.cacheCreation5mInputTokens}
+          cacheCreation1hInputTokens={usageLogDetail.cacheCreation1hInputTokens}
+          cacheReadInputTokens={usageLogDetail.cacheReadInputTokens}
+          cacheTtlApplied={usageLogDetail.cacheTtlApplied}
+          swapCacheTtlApplied={usageLogDetail.swapCacheTtlApplied}
+          costUsd={usageLogDetail.costUsd}
+          costMultiplier={usageLogDetail.costMultiplier}
+          groupCostMultiplier={usageLogDetail.groupCostMultiplier}
+          costBreakdown={usageLogDetail.costBreakdown}
+          hedgeLosers={usageLogDetail.hedgeLosers}
+          context1mApplied={usageLogDetail.context1mApplied}
+          durationMs={usageLogDetail.durationMs}
+          ttfbMs={usageLogDetail.ttfbMs}
+          externalOpen={usageLogDetailOpen}
+          onExternalOpenChange={(open) => {
+            setUsageLogDetailOpen(open);
+            if (!open) setUsageLogDetail(null);
+          }}
+        />
+      )}
     </div>
   );
 }

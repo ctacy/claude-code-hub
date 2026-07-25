@@ -15,6 +15,7 @@ import { assembleUsageLogsXlsx, buildDetailRowXml } from "@/lib/usage-logs/expor
 import { isProviderFinalized } from "@/lib/utils/provider-display";
 import { resolveSystemTimezone } from "@/lib/utils/timezone";
 import {
+  findUsageLogById,
   findUsageLogSessionIdSuggestions,
   findUsageLogsBatch,
   findUsageLogsStats,
@@ -24,6 +25,7 @@ import {
   getUsedStatusCodes,
   type UsageLogBatchFilters,
   type UsageLogFilters,
+  type UsageLogRow,
   type UsageLogSummary,
   type UsageLogsBatchResult,
   type UsageLogsResult,
@@ -709,6 +711,21 @@ export async function getUsageLogsBatch(
   } catch (error) {
     logger.error("获取使用日志批量数据失败:", error);
     const message = error instanceof Error ? error.message : "获取使用日志批量数据失败";
+    return { ok: false, error: message };
+  }
+}
+
+export async function getUsageLogById(id: number): Promise<ActionResult<UsageLogRow>> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Unauthorized" };
+
+  try {
+    const row = await findUsageLogById(id);
+    if (!row) return { ok: false, error: "Not found" };
+    return { ok: true, data: row };
+  } catch (error) {
+    logger.error("获取请求详情失败:", error);
+    const message = error instanceof Error ? error.message : "获取请求详情失败";
     return { ok: false, error: message };
   }
 }

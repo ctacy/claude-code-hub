@@ -1789,3 +1789,95 @@ export async function findUsageLogsStats(
     totalCacheCreation1hTokens: summaryResult?.totalCacheCreation1hTokens ?? 0,
   };
 }
+
+/**
+ * Fetch a single UsageLogRow by message_request.id.
+ * Returns null if the record does not exist or has been soft-deleted.
+ */
+export async function findUsageLogById(id: number): Promise<UsageLogRow | null> {
+  const results = await db
+    .select({
+      id: messageRequest.id,
+      createdAt: messageRequest.createdAt,
+      sessionId: messageRequest.sessionId,
+      requestSequence: messageRequest.requestSequence,
+      userName: users.name,
+      keyName: keysTable.name,
+      providerName: providers.name,
+      model: messageRequest.model,
+      originalModel: messageRequest.originalModel,
+      actualResponseModel: messageRequest.actualResponseModel,
+      endpoint: messageRequest.endpoint,
+      statusCode: messageRequest.statusCode,
+      inputTokens: messageRequest.inputTokens,
+      outputTokens: messageRequest.outputTokens,
+      cacheCreationInputTokens: messageRequest.cacheCreationInputTokens,
+      cacheReadInputTokens: messageRequest.cacheReadInputTokens,
+      cacheCreation5mInputTokens: messageRequest.cacheCreation5mInputTokens,
+      cacheCreation1hInputTokens: messageRequest.cacheCreation1hInputTokens,
+      cacheTtlApplied: messageRequest.cacheTtlApplied,
+      costUsd: messageRequest.costUsd,
+      costMultiplier: messageRequest.costMultiplier,
+      groupCostMultiplier: messageRequest.groupCostMultiplier,
+      costBreakdown: messageRequest.costBreakdown,
+      hedgeLosers: messageRequest.hedgeLosers,
+      durationMs: messageRequest.durationMs,
+      ttfbMs: messageRequest.ttfbMs,
+      errorMessage: messageRequest.errorMessage,
+      providerChain: messageRequest.providerChain,
+      blockedBy: messageRequest.blockedBy,
+      blockedReason: messageRequest.blockedReason,
+      userAgent: messageRequest.userAgent,
+      clientIp: messageRequest.clientIp,
+      messagesCount: messageRequest.messagesCount,
+      context1mApplied: messageRequest.context1mApplied,
+      swapCacheTtlApplied: messageRequest.swapCacheTtlApplied,
+      specialSettings: messageRequest.specialSettings,
+    })
+    .from(messageRequest)
+    .innerJoin(users, eq(messageRequest.userId, users.id))
+    .innerJoin(keysTable, eq(messageRequest.key, keysTable.key))
+    .leftJoin(providers, eq(messageRequest.providerId, providers.id))
+    .where(and(eq(messageRequest.id, id), isNull(messageRequest.deletedAt)))
+    .limit(1);
+
+  if (results.length === 0) return null;
+
+  const row = results[0];
+  const totalRowTokens =
+    (row.inputTokens ?? 0) +
+    (row.outputTokens ?? 0) +
+    (row.cacheCreationInputTokens ?? 0) +
+    (row.cacheReadInputTokens ?? 0);
+
+  const existingSpecialSettings = Array.isArray(row.specialSettings)
+    ? (row.specialSettings as SpecialSetting[])
+    : null;
+
+  const unifiedSpecialSettings = buildUnifiedSpecialSettings({
+    existing: existingSpecialSettings,
+    blockedBy: row.blockedBy,
+    blockedReason: row.blockedReason,
+    statusCode: row.statusCode,
+    cacheTtlApplied: row.cacheTtlApplied,
+    context1mApplied: row.context1mApplied,
+  });
+  const anthropicEffort = extractAnthropicEffortFromSpecialSettings(unifiedSpecialSettings);
+
+  return {
+    ...row,
+    requestSequence: row.requestSequence ?? null,
+    totalTokens: totalRowTokens,
+    cacheCreation5mInputTokens: row.cacheCreation5mInputTokens,
+    cacheCreation1hInputTokens: row.cacheCreation1hInputTokens,
+    cacheTtlApplied: row.cacheTtlApplied,
+    costUsd: row.costUsd?.toString() ?? null,
+    groupCostMultiplier: row.groupCostMultiplier?.toString() ?? null,
+    costBreakdown: (row.costBreakdown as StoredCostBreakdown) ?? null,
+    hedgeLosers: Array.isArray(row.hedgeLosers) ? (row.hedgeLosers as HedgeLoserBilling[]) : null,
+    providerChain: row.providerChain as ProviderChainItem[] | null,
+    endpoint: row.endpoint,
+    specialSettings: unifiedSpecialSettings,
+    anthropicEffort,
+  };
+}
