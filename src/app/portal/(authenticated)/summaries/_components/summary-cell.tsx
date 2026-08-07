@@ -13,9 +13,12 @@ export function SummaryCell({ text }: { text: string }) {
         <TooltipContent
           side="top"
           align="start"
-          className="max-w-sm text-xs whitespace-pre-wrap break-words"
+          collisionPadding={16}
+          className="max-w-[min(42rem,var(--radix-tooltip-content-available-width))] text-xs text-left text-pretty"
         >
-          {text}
+          <div className="max-h-[calc(var(--radix-tooltip-content-available-height)-2rem)] overflow-y-auto overscroll-contain leading-relaxed whitespace-pre-wrap break-words">
+            {text}
+          </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
