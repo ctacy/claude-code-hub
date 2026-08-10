@@ -204,26 +204,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/providers/cache-effectiveness": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List provider cache effectiveness windows
-         * @description Lists aggregated prompt cache effectiveness windows per provider, model, and cache TTL bucket, ordered by window end descending. Read-only metrics; routing and billing are unaffected.
-         */
-        get: operations["getProvidersCacheEffectiveness"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/providers/{id}/circuit:reset": {
         parameters: {
             query?: never;
@@ -2498,26 +2478,6 @@ export interface paths {
          * @description Resets all user statistics through the existing action.
          */
         post: operations["postUsersByIdStatisticsReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/users/{id}/statistics-resets/{resetId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get user statistics reset status
-         * @description Returns the durable status of an asynchronous statistics reset.
-         */
-        get: operations["getUsersByIdStatisticsResetsByResetid"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6328,220 +6288,6 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Invalid request. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Authentication required. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Admin access required. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Provider not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-        };
-    };
-    getProvidersCacheEffectiveness: {
-        parameters: {
-            query?: {
-                /** @description Optional provider id filter. */
-                providerId?: number;
-                /** @description Maximum number of windows to return, capped at 200. */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Cache effectiveness windows. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description Cache effectiveness windows ordered by window end descending. */
-                        items: {
-                            /** @description Aggregation window row id. */
-                            id: number;
-                            /** @description Provider id. */
-                            providerId: number;
-                            /** @description Model name the window was aggregated for. */
-                            model: string;
-                            /** @description Cache TTL bucket, e.g. 5m or 1h. */
-                            cacheTtlBucket: string;
-                            /**
-                             * Format: date-time
-                             * @description Aggregation window start.
-                             */
-                            windowStart: string;
-                            /**
-                             * Format: date-time
-                             * @description Aggregation window end.
-                             */
-                            windowEnd: string;
-                            /** @description Total samples in the window. */
-                            sampleCount: number;
-                            /** @description Samples eligible for cache observation. */
-                            eligibleCount: number;
-                            /** @description Theoretical cacheable prompt tokens in the window. */
-                            theoreticalCacheTokens: number;
-                            /** @description Observed cache read tokens in the window. */
-                            observedCacheReadTokens: number;
-                            /** @description Raw observed/theoretical ratio in basis points (1/100 of a percent). */
-                            rawEffectivenessBp: number;
-                            /** @description Confidence of the raw ratio in basis points. */
-                            confidenceBp: number;
-                            /** @description Confidence-adjusted effectiveness score in basis points. */
-                            effectivenessBp: number;
-                            /**
-                             * Format: date-time
-                             * @description Row creation time.
-                             */
-                            createdAt: string | null;
-                        }[];
                     };
                 };
             };
@@ -23311,8 +23057,6 @@ export interface operations {
                 requestSequence?: number;
                 /** @description Physical source session id. */
                 sourceSessionId?: string;
-                /** @description Stable request id. */
-                requestId?: number;
             };
             header?: never;
             path: {
@@ -23839,8 +23583,6 @@ export interface operations {
                 requestSequence?: number;
                 /** @description Physical source session id. */
                 sourceSessionId?: string;
-                /** @description Stable request id. */
-                requestId?: number;
             };
             header?: never;
             path: {
@@ -24195,12 +23937,7 @@ export interface operations {
     };
     getSessionsBySessionidOriginChain: {
         parameters: {
-            query?: {
-                /** @description Request sequence. */
-                requestSequence?: number;
-                /** @description Physical source session id. */
-                sourceSessionId?: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 /** @description Session id. */
@@ -24371,12 +24108,7 @@ export interface operations {
     };
     getSessionsBySessionidResponse: {
         parameters: {
-            query?: {
-                /** @description Request sequence. */
-                requestSequence?: number;
-                /** @description Physical source session id. */
-                sourceSessionId?: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 /** @description Session id. */
@@ -33004,293 +32736,12 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description User statistics reset queued. */
-            202: {
-                headers: {
-                    /** @description Status resource for the queued statistics reset. */
-                    Location?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        resetId: string;
-                        userId: number;
-                        /** @enum {string} */
-                        status: "queued" | "running" | "completed" | "failed";
-                        /** Format: date-time */
-                        requestedAt: string;
-                        /** Format: date-time */
-                        startedAt: string | null;
-                        /** Format: date-time */
-                        completedAt: string | null;
-                        deletedMessageRequests: number;
-                        deletedUsageLedger: number;
-                        errorCode: string | null;
-                    };
-                };
-            };
-            /** @description Invalid request. */
-            400: {
+            /** @description User statistics reset. */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Authentication required. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Admin access required. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description User not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Internal server error. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Dependency unavailable. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": {
-                        /** @description Stable problem type URI or URN. */
-                        type: string;
-                        /** @description Short problem title. */
-                        title: string;
-                        /** @description HTTP status code. */
-                        status: number;
-                        /** @description Human-readable error detail. */
-                        detail: string;
-                        /** @description Request path that produced the problem. */
-                        instance: string;
-                        /** @description Application error code for frontend i18n. */
-                        errorCode: string;
-                        /** @description Optional i18n parameters. */
-                        errorParams?: {
-                            [key: string]: unknown;
-                        };
-                        /** @description Optional request trace identifier. */
-                        traceId?: string;
-                        /** @description Validation failure details. */
-                        invalidParams?: {
-                            /** @description Path to the invalid input field. */
-                            path: (string | number)[];
-                            /** @description Machine-readable validation error code. */
-                            code: string;
-                            /** @description Validation error message. */
-                            message: string;
-                        }[];
-                    };
-                };
-            };
-        };
-    };
-    getUsersByIdStatisticsResetsByResetid: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description User id. */
-                id: number;
-                /** @description Statistics reset id. */
-                resetId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description User statistics reset status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        resetId: string;
-                        userId: number;
-                        /** @enum {string} */
-                        status: "queued" | "running" | "completed" | "failed";
-                        /** Format: date-time */
-                        requestedAt: string;
-                        /** Format: date-time */
-                        startedAt: string | null;
-                        /** Format: date-time */
-                        completedAt: string | null;
-                        deletedMessageRequests: number;
-                        deletedUsageLedger: number;
-                        errorCode: string | null;
-                    };
-                };
+                content?: never;
             };
             /** @description Invalid request. */
             400: {
