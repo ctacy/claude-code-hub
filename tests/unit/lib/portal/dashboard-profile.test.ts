@@ -14,7 +14,7 @@ function makeRow(partial: Partial<ProviderLeaderboardEntry>): ProviderLeaderboar
     totalCost: 0,
     totalTokens: 0,
     successRate: 1,
-    avgTtfbMs: 0,
+    avgTtftMs: 0,
     avgTokensPerSecond: 0,
     avgCostPerRequest: 0,
     avgCostPerMillionTokens: 0,
@@ -155,7 +155,7 @@ describe("normalizeProviderRows", () => {
         totalCost: 0.123456789,
         totalRequests: 7,
         successRate: i === 3 ? null : 0.95,
-        avgTtfbMs: 123.6,
+        avgTtftMs: 123.6,
       })
     );
 
@@ -167,8 +167,8 @@ describe("normalizeProviderRows", () => {
     expect(result[0].totalCost).toBe(0.1235);
     // null → 0
     expect(result[3].successRate).toBe(0);
-    // TTFB 取整
-    expect(result[0].avgTtfbMs).toBe(124);
+    // TTFT 取整
+    expect(result[0].avgTtftMs).toBe(124);
   });
 
   it("输入为空时返回空数组", () => {
