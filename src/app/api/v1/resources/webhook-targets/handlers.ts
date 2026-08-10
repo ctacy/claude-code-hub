@@ -54,7 +54,7 @@ export async function getWebhookTarget(c: Context): Promise<Response> {
 export async function createWebhookTarget(c: Context): Promise<Response> {
   const body = await parseHonoJsonBody(c, WebhookTargetCreateSchema);
   if (!body.ok) return body.response;
-  if (hasLegacyRedactedWritePlaceholders(body.data)) {
+  if (hasLegacyRedactedWritePlaceholders(body.data as any)) {
     return createProblemResponse({
       status: 422,
       instance: new URL(c.req.url).pathname,
@@ -67,7 +67,7 @@ export async function createWebhookTarget(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     webhookTargetActions.createWebhookTargetAction,
-    [body.data] as never[],
+    [body.data as any] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -99,7 +99,7 @@ export async function updateWebhookTarget(c: Context): Promise<Response> {
       detail: "Webhook target was not found.",
     });
   }
-  if (hasUnresolvedRedactedHeaderEcho(body.data.customHeaders, existing.customHeaders)) {
+  if (hasUnresolvedRedactedHeaderEcho((body.data as any).customHeaders, existing.customHeaders)) {
     return createProblemResponse({
       status: 422,
       instance: new URL(c.req.url).pathname,
@@ -107,7 +107,7 @@ export async function updateWebhookTarget(c: Context): Promise<Response> {
       detail: "Redacted placeholders cannot be used for renamed custom header fields.",
     });
   }
-  const updatePayload = preserveRedactedWebhookTargetUpdateFields(body.data, existing);
+  const updatePayload = preserveRedactedWebhookTargetUpdateFields(body.data as any, existing);
   const result = await callAction(
     c,
     webhookTargetActions.updateWebhookTargetAction,
@@ -140,7 +140,7 @@ export async function testWebhookTarget(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     webhookTargetActions.testWebhookTargetAction,
-    [id, body.data.notificationType] as never[],
+    [id, (body.data as any).notificationType] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);

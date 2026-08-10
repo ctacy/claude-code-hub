@@ -116,7 +116,7 @@ export async function createUser(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     withDefaultKey ? actions.addUser : actions.createUserOnly,
-    [body.data] as never[],
+    [body.data as any] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -135,7 +135,7 @@ export async function updateUser(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     actions.editUser,
-    [params.id, body.data] as never[],
+    [params.id, body.data as any] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -162,7 +162,7 @@ export async function enableUser(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.toggleUserEnabled,
-      [params.id, body.data.enabled] as never[],
+      [params.id, (body.data as any).enabled] as never[],
       c.get("auth")
     )
   );
@@ -176,7 +176,7 @@ export async function renewUser(c: Context): Promise<Response> {
   const actions = await import("@/actions/users");
   return actionJson(
     c,
-    await callAction(c, actions.renewUser, [params.id, body.data] as never[], c.get("auth"))
+    await callAction(c, actions.renewUser, [params.id, body.data as any] as never[], c.get("auth"))
   );
 }
 
@@ -281,7 +281,12 @@ export async function getUsersUsage(c: Context): Promise<Response> {
   const actions = await import("@/actions/users");
   return actionJson(
     c,
-    await callAction(c, actions.getUsersUsageBatch, [body.data.userIds] as never[], c.get("auth"))
+    await callAction(
+      c,
+      actions.getUsersUsageBatch,
+      [(body.data as any).userIds] as never[],
+      c.get("auth")
+    )
   );
 }
 
@@ -291,7 +296,7 @@ export async function batchUpdateUsers(c: Context): Promise<Response> {
   const actions = await import("@/actions/users");
   return actionJson(
     c,
-    await callAction(c, actions.batchUpdateUsers, [body.data] as never[], c.get("auth"))
+    await callAction(c, actions.batchUpdateUsers, [body.data as any] as never[], c.get("auth"))
   );
 }
 

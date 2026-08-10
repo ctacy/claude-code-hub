@@ -483,7 +483,7 @@ export function IoLogsView({
           hedgeLosers={usageLogDetail.hedgeLosers}
           context1mApplied={usageLogDetail.context1mApplied}
           durationMs={usageLogDetail.durationMs}
-          ttfbMs={usageLogDetail.ttfbMs}
+          ttftMs={usageLogDetail.ttftMs}
           externalOpen={usageLogDetailOpen}
           onExternalOpenChange={(open) => {
             setUsageLogDetailOpen(open);

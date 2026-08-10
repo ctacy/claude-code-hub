@@ -4,7 +4,7 @@
 
 <div align="center">
 
-# Claude Code Hub
+# CC Hub
 
 **🚀 智能 AI API 代理中转服务平台｜面向团队的多供应商统一接入、弹性调度与精细化运营中心**
 
@@ -14,7 +14,7 @@
 [![Telegram Group](https://img.shields.io/badge/Telegram-交流群-blue?logo=telegram)](https://t.me/ygxz_group)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ctacy/claude-code-hub)
 
-Claude Code Hub 通过 Next.js 15 + Hono + PostgreSQL + Redis 组合，实现 Claude/OpenAI 兼容 API 代理、智能负载均衡、实时监控、价格管理与自动化文档，帮助团队安全、可观测地管理多家 AI 服务商。
+CC Hub 通过 Next.js 16 + Hono + PostgreSQL + Redis 组合，实现 Claude/OpenAI 兼容 API 代理、智能负载均衡、实时监控、价格管理与自动化文档，帮助团队安全、可观测地管理多家 AI 服务商。
 
 💬 **加入讨论**：有部署、功能或技术问题？欢迎加入 [Telegram 交流群](https://t.me/ygxz_group) 与社区一起讨论！
 
@@ -187,7 +187,7 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 客户端 / CLI / 第三方系统
         │
         ▼
-Next.js 15 App Router (v1 API 路由)
+Next.js 16 App Router (v1 API 路由)
         │
 Hono + Proxy Pipeline (认证 → Session 分配 → 限流 → 供应商选择 → 请求转发 → 响应处理)
         │
@@ -365,3 +365,7 @@ cch doctor            # 诊断集群与部署状态
 ## 📜 许可证 License
 
 本项目采用 [MIT License](LICENSE)，可自由使用与二次开发，仍需遵守条款并保留致谢信息。
+
+---
+
+<sub>CC Hub 并非 Anthropic 官方项目，与其无任何关联。Claude Code、Claude 等均属 Anthropic 公司的商标。</sub>

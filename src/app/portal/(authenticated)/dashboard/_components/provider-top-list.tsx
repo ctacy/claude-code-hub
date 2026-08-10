@@ -53,7 +53,7 @@ export function ProviderTopList({
                     <span>{row.totalRequests.toLocaleString("zh-CN")} 次请求</span>
                     <span className="flex gap-3">
                       <span>成功率 {formatPercent(row.successRate)}</span>
-                      <span>TTFB {row.avgTtfbMs}ms</span>
+                      <span>TTFT {row.avgTtftMs}ms</span>
                     </span>
                   </div>
                 </li>

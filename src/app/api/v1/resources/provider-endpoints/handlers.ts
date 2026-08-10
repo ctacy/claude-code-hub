@@ -98,7 +98,7 @@ export async function updateProviderVendor(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.editProviderVendor,
-      [{ vendorId: params.vendorId, ...body.data }] as never[],
+      [{ vendorId: params.vendorId, ...(body.data as any) }] as never[],
       c.get("auth")
     )
   );
@@ -168,7 +168,7 @@ export async function createProviderEndpoint(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.addProviderEndpoint,
-      [{ vendorId: params.vendorId, ...body.data }] as never[],
+      [{ vendorId: params.vendorId, ...(body.data as any) }] as never[],
       c.get("auth")
     ),
     201
@@ -188,7 +188,7 @@ export async function updateProviderEndpoint(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.editProviderEndpoint,
-      [{ endpointId: params.endpointId, ...body.data }] as never[],
+      [{ endpointId: params.endpointId, ...(body.data as any) }] as never[],
       c.get("auth")
     )
   );
@@ -223,7 +223,7 @@ export async function probeProviderEndpoint(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.probeProviderEndpoint,
-      [{ endpointId: params.endpointId, ...body.data }] as never[],
+      [{ endpointId: params.endpointId, ...(body.data as any) }] as never[],
       c.get("auth")
     )
   );
@@ -255,7 +255,7 @@ export async function getProviderEndpointProbeLogs(c: Context): Promise<Response
 export async function batchGetProbeLogs(c: Context): Promise<Response> {
   const body = await parseHonoJsonBody(c, BatchProbeLogsSchema);
   if (!body.ok) return body.response;
-  const hidden = await ensureVisibleEndpointIds(c, body.data.endpointIds);
+  const hidden = await ensureVisibleEndpointIds(c, (body.data as any).endpointIds);
   if (hidden) return hidden;
   const actions = await import("@/actions/provider-endpoints");
   return sanitizedActionJson(
@@ -263,7 +263,7 @@ export async function batchGetProbeLogs(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.batchGetProviderEndpointProbeLogs,
-      [body.data] as never[],
+      [body.data as any] as never[],
       c.get("auth")
     )
   );
@@ -283,7 +283,7 @@ export async function batchGetVendorEndpointStats(c: Context): Promise<Response>
     await callAction(
       c,
       actions.batchGetVendorTypeEndpointStats,
-      [body.data] as never[],
+      [body.data as any] as never[],
       c.get("auth")
     )
   );
@@ -309,12 +309,17 @@ export async function getEndpointCircuit(c: Context): Promise<Response> {
 export async function batchGetEndpointCircuits(c: Context): Promise<Response> {
   const body = await parseHonoJsonBody(c, BatchEndpointCircuitSchema);
   if (!body.ok) return body.response;
-  const hidden = await ensureVisibleEndpointIds(c, body.data.endpointIds);
+  const hidden = await ensureVisibleEndpointIds(c, (body.data as any).endpointIds);
   if (hidden) return hidden;
   const actions = await import("@/actions/provider-endpoints");
   return sanitizedActionJson(
     c,
-    await callAction(c, actions.batchGetEndpointCircuitInfo, [body.data] as never[], c.get("auth"))
+    await callAction(
+      c,
+      actions.batchGetEndpointCircuitInfo,
+      [body.data as any] as never[],
+      c.get("auth")
+    )
   );
 }
 
@@ -365,7 +370,7 @@ export async function setVendorCircuitManualOpen(c: Context): Promise<Response> 
   const result = await callAction(
     c,
     actions.setVendorTypeCircuitManualOpen,
-    [{ vendorId: params.vendorId, ...body.data }] as never[],
+    [{ vendorId: params.vendorId, ...(body.data as any) }] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -384,7 +389,7 @@ export async function resetVendorCircuit(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     actions.resetVendorTypeCircuit,
-    [{ vendorId: params.vendorId, providerType: body.data.providerType }] as never[],
+    [{ vendorId: params.vendorId, providerType: (body.data as any).providerType }] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);

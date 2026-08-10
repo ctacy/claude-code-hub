@@ -4,7 +4,7 @@
 
 <div align="center">
 
-# Claude Code Hub
+# CC Hub
 
 **🚀 Intelligent AI API relay platform — the control center for multi-provider onboarding, elastic routing, and granular operations**
 
@@ -14,7 +14,7 @@
 [![Telegram Group](https://img.shields.io/badge/Telegram-Join%20Group-blue?logo=telegram)](https://t.me/ygxz_group)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ctacy/claude-code-hub)
 
-Claude Code Hub combines Next.js 15, Hono, PostgreSQL, and Redis to deliver a Claude/OpenAI-compatible API gateway with smart load balancing, live observability, price governance, and automated documentation, enabling teams to manage multiple AI vendors safely and transparently.
+CC Hub combines Next.js 16, Hono, PostgreSQL, and Redis to deliver a Claude/OpenAI-compatible API gateway with smart load balancing, live observability, price governance, and automated documentation, enabling teams to manage multiple AI vendors safely and transparently.
 
 💬 **Join the discussion**: Questions about deployment, features or technical issues? Join our [Telegram community](https://t.me/ygxz_group)!
 
@@ -157,7 +157,7 @@ Once started:
 Clients / CLI / Integrations
         │
         ▼
-Next.js 15 App Router (v1 API routes)
+Next.js 16 App Router (v1 API routes)
         │
 Hono + Proxy Pipeline (Auth → Session Allocation → Rate Limiting → Provider Selection → Forwarding → Response Handling)
         │
@@ -322,3 +322,7 @@ This project is based on [ding113/claude-code-hub](https://github.com/ding113/cl
 ## 📜 License
 
 Released under the [MIT License](LICENSE). You’re welcome to use and extend the project as long as you comply with the license and retain the attribution.
+
+---
+
+<sub>CC Hub is not an official Anthropic project and is not affiliated with Anthropic. Claude Code and Claude are trademarks of Anthropic.</sub>

@@ -167,7 +167,7 @@ export async function batchTerminateSessions(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.terminateActiveSessionsBatch,
-      [body.data.sessionIds] as never[],
+      [(body.data as any).sessionIds] as never[],
       c.get("auth")
     )
   );

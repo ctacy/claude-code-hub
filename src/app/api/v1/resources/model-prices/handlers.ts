@@ -75,7 +75,7 @@ export async function uploadModelPrices(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     actions.uploadPriceTable,
-    [body.data.content, body.data.overwriteManual] as never[],
+    [(body.data as any).content, (body.data as any).overwriteManual] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -96,7 +96,7 @@ export async function syncLiteLlmPrices(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     actions.syncLiteLLMPrices,
-    [body.data.overwriteManual] as never[],
+    [(body.data as any).overwriteManual] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -110,7 +110,7 @@ export async function upsertModelPrice(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     actions.upsertSingleModelPrice,
-    [body.data] as never[],
+    [body.data as any] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -142,7 +142,10 @@ export async function pinModelPriceProvider(c: Context): Promise<Response> {
     c,
     actions.pinModelPricingProviderAsManual,
     [
-      { modelName: params.data.modelName, pricingProviderKey: body.data.pricingProviderKey },
+      {
+        modelName: params.data.modelName,
+        pricingProviderKey: (body.data as any).pricingProviderKey,
+      },
     ] as never[],
     c.get("auth")
   );

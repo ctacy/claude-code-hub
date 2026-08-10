@@ -30,7 +30,7 @@ export async function updateNotificationSettings(c: Context): Promise<Response> 
   const body = await parseHonoJsonBody(c, NotificationSettingsUpdateSchema);
   if (!body.ok) return body.response;
   const actions = await import("@/actions/notifications");
-  const updatePayload = preserveLegacyNotificationSettingsUpdateInput(body.data);
+  const updatePayload = preserveLegacyNotificationSettingsUpdateInput(body.data as any);
   const result = await callAction(
     c,
     actions.updateNotificationSettingsAction,
@@ -48,7 +48,7 @@ export async function testNotificationWebhook(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     actions.testWebhookAction,
-    [body.data.webhookUrl, body.data.type] as never[],
+    [(body.data as any).webhookUrl, (body.data as any).type] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -76,7 +76,7 @@ export async function updateNotificationBindings(c: Context): Promise<Response> 
   const result = await callAction(
     c,
     actions.updateBindingsAction,
-    [type, body.data.items] as never[],
+    [type, (body.data as any).items] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);

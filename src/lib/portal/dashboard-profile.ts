@@ -100,7 +100,7 @@ export function aggregateDailyTotals(
 }
 
 /**
- * Provider 周榜归一为前端展示模型：截断至前 N 条并把 null 成功率/TTFB 收尾为 0。
+ * Provider 周榜归一为前端展示模型：截断至前 N 条并把 null 成功率/TTFT 收尾为 0。
  */
 export interface ProviderTopRow {
   providerId: number;
@@ -108,7 +108,7 @@ export interface ProviderTopRow {
   totalCost: number;
   totalRequests: number;
   successRate: number; // 0-1
-  avgTtfbMs: number;
+  avgTtftMs: number;
 }
 
 const PROVIDER_TOP_LIMIT = 6;
@@ -120,7 +120,7 @@ export function normalizeProviderRows(rows: ProviderLeaderboardEntry[]): Provide
     totalCost: round4(row.totalCost),
     totalRequests: row.totalRequests,
     successRate: row.successRate ?? 0,
-    avgTtfbMs: Math.round(row.avgTtfbMs),
+    avgTtftMs: Math.round(row.avgTtftMs),
   }));
 }
 

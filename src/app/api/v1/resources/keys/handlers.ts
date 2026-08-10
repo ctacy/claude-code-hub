@@ -55,7 +55,7 @@ export async function createUserKey(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     actions.addKey,
-    [{ userId: params.userId, ...body.data }] as never[],
+    [{ userId: params.userId, ...(body.data as any) }] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -99,7 +99,7 @@ export async function createSelfKey(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     actions.addKey,
-    [{ ...body.data, userId: sessionUserId }] as never[],
+    [{ ...(body.data as any), userId: sessionUserId }] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -157,7 +157,7 @@ export async function updateKey(c: Context): Promise<Response> {
   const actions = await import("@/actions/keys");
   return actionJson(
     c,
-    await callAction(c, actions.editKey, [params.keyId, body.data] as never[], c.get("auth"))
+    await callAction(c, actions.editKey, [params.keyId, body.data as any] as never[], c.get("auth"))
   );
 }
 
@@ -185,7 +185,7 @@ export async function enableKey(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.toggleKeyEnabled,
-      [params.keyId, body.data.enabled] as never[],
+      [params.keyId, (body.data as any).enabled] as never[],
       c.get("auth")
     )
   );
@@ -204,7 +204,7 @@ export async function renewKey(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.renewKeyExpiresAt,
-      [params.keyId, body.data] as never[],
+      [params.keyId, body.data as any] as never[],
       c.get("auth")
     )
   );
@@ -272,7 +272,7 @@ export async function patchKeyLimit(c: Context): Promise<Response> {
     await callAction(
       c,
       actions.patchKeyLimit,
-      [params.data.keyId, params.data.field, body.data.value] as never[],
+      [params.data.keyId, params.data.field, (body.data as any).value] as never[],
       c.get("auth")
     )
   );
@@ -284,7 +284,7 @@ export async function batchUpdateKeys(c: Context): Promise<Response> {
   const actions = await import("@/actions/keys");
   return actionJson(
     c,
-    await callAction(c, actions.batchUpdateKeys, [body.data] as never[], c.get("auth"))
+    await callAction(c, actions.batchUpdateKeys, [body.data as any] as never[], c.get("auth"))
   );
 }
 

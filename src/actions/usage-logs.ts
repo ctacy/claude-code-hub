@@ -159,7 +159,10 @@ async function buildUsageLogsExport(
     progress: Pick<UsageLogsExportStatus, "processedRows" | "totalRows" | "progressPercent">
   ) => Promise<void> | void
 ): Promise<string> {
-  const initialResult = await findUsageLogsWithDetails({ ...filters, page: 1, pageSize: 1 });
+  const initialResult = await findUsageLogsWithDetails(
+    { ...filters, page: 1, pageSize: 1 },
+    { includeSourceSessionIds: false }
+  );
   let estimatedTotalRows = initialResult.total;
 
   if (estimatedTotalRows === 0) {
@@ -180,6 +183,7 @@ async function buildUsageLogsExport(
       ...filters,
       cursor,
       limit: USAGE_LOGS_EXPORT_BATCH_SIZE,
+      includeSourceSessionIds: false,
     });
 
     if (batch.logs.length > 0) {
@@ -703,6 +707,7 @@ export async function getUsageLogsBatch(
         const snapshot = liveData.get(key);
         if (snapshot) {
           row._liveChain = snapshot;
+          row.routingTrace = snapshot.routingTrace ?? row.routingTrace;
         }
       }
     }

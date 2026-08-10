@@ -91,7 +91,7 @@ export async function createUsageLogsExport(c: Context): Promise<Response> {
 
   // XLSX is assembled in-memory from every matching row, so it is only offered
   // via the async job flow (sync exports always return CSV).
-  if (!preferAsync && body.data.format === "xlsx") {
+  if (!preferAsync && (body.data as any).format === "xlsx") {
     return createProblemResponse({
       status: 400,
       instance: new URL(c.req.url).pathname,
@@ -101,8 +101,13 @@ export async function createUsageLogsExport(c: Context): Promise<Response> {
   }
 
   const result = preferAsync
-    ? await callAction(c, actions.startUsageLogsExport, [body.data] as never[], c.get("auth"))
-    : await callAction(c, actions.exportUsageLogs, [body.data] as never[], c.get("auth"));
+    ? await callAction(
+        c,
+        actions.startUsageLogsExport,
+        [body.data as any] as never[],
+        c.get("auth")
+      )
+    : await callAction(c, actions.exportUsageLogs, [body.data as any] as never[], c.get("auth"));
   if (!result.ok) return actionError(c, result);
 
   if (preferAsync) {

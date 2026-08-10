@@ -109,7 +109,7 @@ export async function getProvider(c: Context): Promise<Response> {
 export async function createProvider(c: Context): Promise<Response> {
   const body = await parseHonoJsonBody(c, ProviderCreateSchema);
   if (!body.ok) return body.response;
-  if (hasLegacyRedactedWritePlaceholders(body.data)) {
+  if (hasLegacyRedactedWritePlaceholders(body.data as any)) {
     return createProblemResponse({
       status: 422,
       instance: new URL(c.req.url).pathname,
@@ -121,7 +121,7 @@ export async function createProvider(c: Context): Promise<Response> {
   const result = await callAction(
     c,
     providerActions.addProvider,
-    [body.data] as never[],
+    [body.data as any] as never[],
     c.get("auth")
   );
   if (!result.ok) return actionError(c, result);
@@ -129,7 +129,7 @@ export async function createProvider(c: Context): Promise<Response> {
   const createdId = getCreatedProviderId(result.data);
   const created = createdId
     ? await findVisibleProvider(c, createdId)
-    : await findCreatedProvider(c, body.data);
+    : await findCreatedProvider(c, body.data as any);
   if (created instanceof Response) return created;
   if (!created) {
     return createProblemResponse({
@@ -152,7 +152,10 @@ export async function updateProvider(c: Context): Promise<Response> {
   const existing = await findVisibleProvider(c, id);
   if (existing instanceof Response) return existing;
   if (!existing) return providerNotFound(c);
-  if (body.data.key !== undefined && hasLegacyRedactedWritePlaceholders(body.data.key)) {
+  if (
+    (body.data as any).key !== undefined &&
+    hasLegacyRedactedWritePlaceholders((body.data as any).key)
+  ) {
     return createProblemResponse({
       status: 422,
       instance: new URL(c.req.url).pathname,
@@ -160,7 +163,7 @@ export async function updateProvider(c: Context): Promise<Response> {
       detail: "Redacted placeholders cannot be used for the key field when updating providers.",
     });
   }
-  if (hasUnresolvedRedactedHeaderEcho(body.data.custom_headers, existing.customHeaders)) {
+  if (hasUnresolvedRedactedHeaderEcho((body.data as any).custom_headers, existing.customHeaders)) {
     return createProblemResponse({
       status: 422,
       instance: new URL(c.req.url).pathname,
@@ -169,7 +172,7 @@ export async function updateProvider(c: Context): Promise<Response> {
     });
   }
 
-  const updatePayload = preserveRedactedProviderUpdateFields(body.data, existing);
+  const updatePayload = preserveRedactedProviderUpdateFields(body.data as any, existing);
   const providerActions = await import("@/actions/providers");
   const result = await callAction(
     c,
@@ -270,7 +273,7 @@ export async function resetProviderUsage(c: Context): Promise<Response> {
 export async function resetProviderCircuitsBatch(c: Context): Promise<Response> {
   const body = await parseJson(c, ProviderIdsBodySchema);
   if (body instanceof Response) return body;
-  const visibilityError = await ensureVisibleProviderIds(c, body.providerIds);
+  const visibilityError = await ensureVisibleProviderIds(c, (body as any).providerIds);
   if (visibilityError) return visibilityError;
   const providerActions = await import("@/actions/providers");
   return actionJson(
@@ -301,7 +304,7 @@ export async function getProviderLimitBatch(c: Context): Promise<Response> {
   if (body instanceof Response) return body;
   const visibleProviders = await loadVisibleProviders(c);
   if (visibleProviders instanceof Response) return visibleProviders;
-  const providerIds = new Set(body.providerIds);
+  const providerIds = new Set((body as any).providerIds);
   const providers = visibleProviders.filter((provider) => providerIds.has(provider.id));
   const providerActions = await import("@/actions/providers");
   const result = await callAction(
@@ -352,7 +355,7 @@ export async function autoSortProviders(c: Context): Promise<Response> {
 export async function batchUpdateProviders(c: Context): Promise<Response> {
   const body = await parseJson(c, ProviderBatchUpdateSchema);
   if (body instanceof Response) return body;
-  const visibilityError = await ensureVisibleProviderIds(c, body.providerIds);
+  const visibilityError = await ensureVisibleProviderIds(c, (body as any).providerIds);
   if (visibilityError) return visibilityError;
   const providerActions = await import("@/actions/providers");
   return actionJson(
@@ -364,7 +367,7 @@ export async function batchUpdateProviders(c: Context): Promise<Response> {
 export async function batchDeleteProviders(c: Context): Promise<Response> {
   const body = await parseJson(c, ProviderIdsBodySchema);
   if (body instanceof Response) return body;
-  const visibilityError = await ensureVisibleProviderIds(c, body.providerIds);
+  const visibilityError = await ensureVisibleProviderIds(c, (body as any).providerIds);
   if (visibilityError) return visibilityError;
   const providerActions = await import("@/actions/providers");
   return actionJson(
@@ -386,7 +389,7 @@ export async function undoDeleteProvider(c: Context): Promise<Response> {
 export async function previewBatchPatch(c: Context): Promise<Response> {
   const body = await parseJson(c, ProviderBatchPatchPreviewSchema);
   if (body instanceof Response) return body;
-  const visibilityError = await ensureVisibleProviderIds(c, body.providerIds);
+  const visibilityError = await ensureVisibleProviderIds(c, (body as any).providerIds);
   if (visibilityError) return visibilityError;
   const providerActions = await import("@/actions/providers");
   return actionJson(
@@ -398,7 +401,7 @@ export async function previewBatchPatch(c: Context): Promise<Response> {
 export async function applyBatchPatch(c: Context): Promise<Response> {
   const body = await parseJson(c, ProviderBatchPatchApplySchema);
   if (body instanceof Response) return body;
-  const visibilityError = await ensureVisibleProviderIds(c, body.providerIds);
+  const visibilityError = await ensureVisibleProviderIds(c, (body as any).providerIds);
   if (visibilityError) return visibilityError;
   const providerActions = await import("@/actions/providers");
   return actionJson(
@@ -761,7 +764,7 @@ type JsonBodySchema<T> = {
 async function parseJson<T>(c: Context, schema: JsonBodySchema<T>): Promise<T | Response> {
   const body = await parseHonoJsonBody(c, schema);
   if (!body.ok) return body.response;
-  return body.data;
+  return body.data as any;
 }
 
 function parseProviderIdWithSuffix(c: Context, suffix: string): number | Response {
