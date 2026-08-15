@@ -185,6 +185,15 @@ export const EnvSchema = z.object({
   // - false (默认)：不记录，性能零开销
   // - true：记录完整请求体（request_body）和响应体（response_body，截断至 1MB）
   ENABLE_IO_BODY_LOGGING: z.string().default("false").transform(booleanTransform),
+  // 两阶段发布开关。false 时保持旧 key 写入，所有实例升级后再启用单 key 去重布局。
+  SESSION_RESPONSE_BODY_DEDUP_ENABLED: z.string().default("false").transform(booleanTransform),
+  // 会话响应正文写入 Redis 的字节上限。旧布局按单份限制，去重布局按唯一正文总字节限制。
+  SESSION_RESPONSE_BODY_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .min(64 * 1024)
+    .max(64 * 1024 * 1024)
+    .default(5 * 1024 * 1024),
   DEBUG_MODE: z.string().default("false").transform(booleanTransform),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
   TZ: z.string().default("Asia/Shanghai"),
@@ -233,8 +242,6 @@ export const EnvSchema = z.object({
   REPLAY_MAX_CONCURRENT_SPOOLS: z.coerce.number().int().min(1).max(1024).default(64),
   // Redis 热层 TTL（活跃/刚完成的响应块与元数据）
   REPLAY_TTL_SECONDS: z.coerce.number().int().min(60).max(7200).default(600),
-  // PG 完成持久层 TTL（跨小时级重放窗口）
-  REPLAY_COMPLETED_TTL_SECONDS: z.coerce.number().int().min(300).max(86400).default(3600),
   // 单响应缓存上限（超限即放弃 spool，fail-open 回现状）
   REPLAY_MAX_PAYLOAD_BYTES: z.coerce
     .number()
