@@ -14,7 +14,7 @@ export function SummaryCell({ text }: { text: string }) {
           side="top"
           align="start"
           collisionPadding={16}
-          className="max-w-[min(42rem,var(--radix-tooltip-content-available-width))] text-xs text-left text-pretty py-3"
+          className="max-w-[min(var(--radix-tooltip-content-available-width),100vw)] text-xs text-left text-pretty py-3"
         >
           <div className="max-h-[min(calc(100vh-10rem),var(--radix-tooltip-content-available-height))] overflow-y-auto overscroll-contain leading-loose whitespace-pre-wrap break-words">
             {text}
