@@ -53,8 +53,8 @@ export function spawnPgTool(
  *
  * @param mode 导出模式:
  *   - 'full': 完整备份（默认）
- *   - 'excludeLogs': 排除日志数据（保留表结构但不导出 message_request 数据）
- *   - 'ledgerOnly': 仅导出账单数据（完全排除 message_request 表的结构和数据）
+ *   - 'excludeLogs': 排除日志数据（保留表结构但不导出 message_request 数据，门户表仅保留结构）
+ *   - 'ledgerOnly': 仅导出账单数据（完全排除 message_request 表的结构和数据，门户表仅保留结构）
  * @returns ReadableStream 数据流
  */
 export function executePgDump(mode: ExportMode = "full"): ReadableStream<Uint8Array> {
@@ -76,9 +76,15 @@ export function executePgDump(mode: ExportMode = "full"): ReadableStream<Uint8Ar
   if (mode === "excludeLogs") {
     // 保留表结构但不导出数据
     args.push("--exclude-table-data=message_request");
+    // 门户表仅保留结构
+    args.push("--exclude-table-data=daily_work_summary");
+    args.push("--exclude-table-data=period_work_summary");
   } else if (mode === "ledgerOnly") {
     // 完全排除 message_request 表（结构和数据）
     args.push("--exclude-table=message_request");
+    // 门户表仅保留结构
+    args.push("--exclude-table-data=daily_work_summary");
+    args.push("--exclude-table-data=period_work_summary");
   }
 
   const pgProcess = spawnPgTool("pg_dump", args, {
