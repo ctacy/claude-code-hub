@@ -76,15 +76,15 @@ export function executePgDump(mode: ExportMode = "full"): ReadableStream<Uint8Ar
   if (mode === "excludeLogs") {
     // 保留表结构但不导出数据
     args.push("--exclude-table-data=message_request");
-    // 门户表仅保留结构
-    args.push("--exclude-table-data=daily_work_summary");
-    args.push("--exclude-table-data=period_work_summary");
+    // 门户表完全排除（结构+数据），避免导入时索引重建冲突
+    args.push("--exclude-table=daily_work_summary");
+    args.push("--exclude-table=period_work_summary");
   } else if (mode === "ledgerOnly") {
     // 完全排除 message_request 表（结构和数据）
     args.push("--exclude-table=message_request");
-    // 门户表仅保留结构
-    args.push("--exclude-table-data=daily_work_summary");
-    args.push("--exclude-table-data=period_work_summary");
+    // 门户表完全排除（结构+数据）
+    args.push("--exclude-table=daily_work_summary");
+    args.push("--exclude-table=period_work_summary");
   }
 
   const pgProcess = spawnPgTool("pg_dump", args, {
