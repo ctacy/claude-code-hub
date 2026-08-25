@@ -53,12 +53,13 @@ function formatLlmError(error: InternalLlmError): string {
 //   {requestCount} 日报="N 条工作记录"；周期报="N 天工作总结"（各自含完整量词短语）
 //   {logsText}     日报=原始请求/响应摘录；周期报=每日总结拼接文本
 //   {charLimit}    按粒度阶梯：日 500 / 周 1000 / 月 1500 / 年 2000
+// summary 要求按项目分段输出（首句列项目清单，正文每项目一段，跨项目工作归入"通用工作"）。
 export const DEFAULT_SUMMARY_PROMPT = `你是一个工作内容分析师。
-以下是用户 "{userName}" 在 {date} 的 {requestCount}：
+以下是用户 "{userName}" 在 {date} 的 {requestCount}（已截取部分内容）：
 
 {logsText}
 
-请分析这位用户在 {date} 的工作内容，以 JSON 格式返回：
+请分析这位用户 {date} 的工作内容，以 JSON 格式返回：
 {
   "tags": {
     "debugging": <int, 调试/排查问题相关请求数>,
@@ -68,12 +69,19 @@ export const DEFAULT_SUMMARY_PROMPT = `你是一个工作内容分析师。
     "testing": <int, 测试/写测试用例相关请求数>,
     "other": <int, 以上无法归类的请求数>
   },
-  "summary": "<{charLimit}字以内自然语言总结，主语用'该用户'，包含主要工作主题、产出和关键成果>"
+  "summary": "<自然语言总结，主语用'该用户'，包含主要工作主题、产出和关键成果，格式见下方>"
 }
+
+summary 格式要求：
+- 首句：「该用户当日围绕 N 个项目展开工作：【项目A】【项目B】【项目C】」
+- 正文：按项目分段，每段格式为「**项目名**：工作内容概述（关键成果+核心改动）」
+- 若存在跨项目的通用工作（如流程优化、环境配置），单独成段标注「**通用工作**」
+- 本次总结字数控制在 {charLimit} 字左右；颗粒度越粗字越多，重趋势与累计成果
+- 项目名称需与代码库/系统名称保持一致，避免用模糊描述（如「某管理后台」）
+
 注意：
 - tags 各项之和不需要严格等于总请求数，按实际分类估算即可
 - summary 不要列出具体对话内容，只总结工作主题和成果
-- 存在多项工作分点列出并换行显示
 - 只输出 JSON，不要有任何其他文字`;
 
 export interface RunResult {
