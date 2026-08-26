@@ -5,6 +5,7 @@ import { ProxyError } from "../errors";
 import {
   classifyFrame,
   type FrameVerdict,
+  isCleanResponsesCompletion,
   isRequestEchoFrame,
   type ProtocolFamily,
 } from "./frame-classifier";
@@ -15,7 +16,9 @@ import { SseFrameParser } from "./sse-frames";
  *
  * - content 帧到达 -> 提交：返回已缓冲的前缀字节 + 原 reader，调用方拼接透传
  * - error / malformed 帧 -> precommit 失败：调用方抛错走现有供应商切换循环
- * - terminal 先于 content / 流提前结束 -> 空流失败
+ * - terminal 先于 content -> 空流失败；但 openai-responses 的干净完成（status=completed）
+ *   视为成功响应直接提交，空回复是合法结果（见 isCleanResponsesCompletion）
+ * - 流提前结束（无终止帧的 EOF）-> 空流失败
  * - neutral 帧入缓冲；超过 event/byte 上限 -> prebuffer_overflow 失败
  *   （请求回显帧不计入字节上限，见 isRequestEchoFrame）
  * - 读间隔超过 idleTimeoutMs -> idle_timeout 失败（调用方按静默超时归类）
@@ -32,13 +35,18 @@ export type StreamGateFailureReason =
   | "idle_timeout";
 
 /**
- * 门控 precommit 错误。继承 ProxyError（statusCode 502）——
- * categorizeErrorAsync 将其归为 PROVIDER_ERROR：计入熔断器并切换供应商，
- * 无需改动现有错误分类逻辑。gate_error 时把上游错误帧原文带入
- * upstreamError.body，供错误规则匹配（如不可重试的客户端输入错误）与审计。
+ * 门控 precommit 错误。继承 ProxyError——
+ * gate_error 时如果上游错误帧携带明确的 4xx 客户端错误特征（例如 cyber_policy、
+ * invalid_request、400 状态码等），则使用真实的 4xx 状态码，使下游错误分类器能正确
+ * 判定为不可重试的客户端错误（NON_RETRYABLE_CLIENT_ERROR），避免无意义的切商重试并
+ * 正常触发 error_rules 覆写；其余情况默认使用 502（PROVIDER_ERROR）触发切商。
+ * 熔断计入与否再由 isRequestScopedGateFailure() 区分，见其文档。
  */
 export class StreamPrecommitError extends ProxyError {
   readonly gateReason: StreamGateFailureReason;
+  readonly gateFamily: ProtocolFamily;
+  /** 干净终止帧先于任何内容到达（区别于上游断流 / 空 body 的 EOF） */
+  readonly terminalBeforeContent: boolean;
 
   constructor(
     reason: StreamGateFailureReason,
@@ -50,17 +58,124 @@ export class StreamPrecommitError extends ProxyError {
       framesSeen?: number;
       bufferedBytes?: number;
       echoExcludedBytes?: number;
+      terminalBeforeContent?: boolean;
     }
   ) {
     const message = `Stream content gate rejected upstream before first valid content (${reason})`;
-    super(message, 502, {
+    const statusCode = resolveGateErrorStatusCode(reason, detail.frameData);
+    super(message, statusCode, {
       body: buildGateErrorBody(reason, detail),
       providerId: detail.providerId,
       providerName: detail.providerName,
     });
     this.name = "StreamPrecommitError";
     this.gateReason = reason;
+    this.gateFamily = detail.family;
+    this.terminalBeforeContent = detail.terminalBeforeContent === true;
   }
+}
+
+/**
+ * 请求作用域的门控失败：不是供应商健康信号，不应计入熔断器。
+ *
+ * 仅限 `openai-responses` 家族的 `empty_stream`。该家族下上游会返回语法完整、语义为空
+ * 的响应：`response.output_text.done` 带 `text: ""`、`response.output_item.done` 带
+ * `content[0].text: ""`、`response.completed` 带 `output: []`。所有帧按 isNonEmptyValue
+ * 判定均非内容，terminal 先于 content 到达即空流。这种空是请求内容决定的（同一 body 在
+ * 任何供应商、任何账号上都复现），记成供应商失败会让一个「毒性请求」在客户端重试放大下
+ * 打开健康供应商的熔断器。仍然 failover（客户端确实拿不到可见内容），只是不计健康度。
+ *
+ * 必须同时满足 `terminalBeforeContent`：`empty_stream` 也覆盖「上游断流 / 空 body」的
+ * EOF 分支，那是真实的供应商侧异常，必须继续计入熔断。
+ *
+ * 其余家族的 `empty_stream` 保持计入：anthropic / openai-chat / gemini 在正常空回复下
+ * 仍会发出内容帧（如 `text_delta` 的空串所在的 content_block 系列），只吐终止帧属于畸形
+ * 流，是真实的供应商侧异常。
+ *
+ * 其余 reason 一律计入：`gate_error` / `decode_error` 是真实上游错误帧或损坏载荷，
+ * `idle_timeout` 是真实上游静默，`prebuffer_overflow` 是异常中性帧洪泛。
+ */
+export function isRequestScopedGateFailure(error: unknown): boolean {
+  return (
+    error instanceof StreamPrecommitError &&
+    error.gateReason === "empty_stream" &&
+    error.gateFamily === "openai-responses" &&
+    error.terminalBeforeContent
+  );
+}
+
+function resolveGateErrorStatusCode(reason: StreamGateFailureReason, frameData?: string): number {
+  if (reason !== "gate_error" || !frameData) {
+    return 502;
+  }
+
+  try {
+    const trimmed = frameData.trim();
+    if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+      return 502;
+    }
+    const json = JSON.parse(trimmed) as Record<string, unknown>;
+    if (!json || typeof json !== "object") {
+      return 502;
+    }
+
+    // 1. 尝试从常见 status 字段直接提取 4xx 状态码
+    const candidates = [
+      json.status,
+      json.status_code,
+      json.statusCode,
+      (json.error as Record<string, unknown> | undefined)?.status,
+      (json.error as Record<string, unknown> | undefined)?.status_code,
+      (json.error as Record<string, unknown> | undefined)?.statusCode,
+      (json.response as { error?: Record<string, unknown> } | undefined)?.error?.status,
+      (json.response as { error?: Record<string, unknown> } | undefined)?.error?.status_code,
+      (json.response as { error?: Record<string, unknown> } | undefined)?.error?.statusCode,
+    ];
+    for (const code of candidates) {
+      if (typeof code === "number" && code >= 400 && code < 500) {
+        return code;
+      }
+    }
+
+    // 2. 检查常见客户端错误类型及错误码
+    const errType = String(
+      (json.error as Record<string, unknown> | undefined)?.type ||
+        (json.response as { error?: Record<string, unknown> } | undefined)?.error?.type ||
+        json.type ||
+        ""
+    ).toLowerCase();
+
+    const errCode = String(
+      (json.error as Record<string, unknown> | undefined)?.code ||
+        (json.response as { error?: Record<string, unknown> } | undefined)?.error?.code ||
+        json.code ||
+        ""
+    ).toLowerCase();
+
+    const errStatus = String(
+      (json.error as Record<string, unknown> | undefined)?.status || json.status || ""
+    ).toUpperCase();
+
+    if (
+      errType === "invalid_request_error" ||
+      errType === "invalid_request" ||
+      errType === "bad_request_error" ||
+      errCode === "cyber_policy" ||
+      errCode === "invalid_prompt" ||
+      errCode === "invalid_value" ||
+      errCode === "unsupported_value" ||
+      errCode === "context_length_exceeded" ||
+      errCode === "message_too_big" ||
+      errCode === "string_above_max_length" ||
+      errStatus === "INVALID_ARGUMENT"
+    ) {
+      return 400;
+    }
+  } catch {
+    // 忽略非 JSON 解析异常
+  }
+
+  return 502;
 }
 
 function buildGateErrorBody(
@@ -71,6 +186,7 @@ function buildGateErrorBody(
     framesSeen?: number;
     bufferedBytes?: number;
     echoExcludedBytes?: number;
+    terminalBeforeContent?: boolean;
   }
 ): string {
   if (reason === "gate_error" && detail.frameData) {
@@ -85,6 +201,9 @@ function buildGateErrorBody(
       frames_seen: detail.framesSeen,
       buffered_bytes: detail.bufferedBytes,
       ...(detail.echoExcludedBytes ? { echo_excluded_bytes: detail.echoExcludedBytes } : {}),
+      ...(reason === "empty_stream"
+        ? { terminal_before_content: detail.terminalBeforeContent === true }
+        : {}),
       ...(detail.frameData ? { frame_preview: detail.frameData.slice(0, 500) } : {}),
     },
   });
@@ -176,7 +295,11 @@ export async function runStreamContentGate(
   let chunkIndex = 0;
   let firstByteSeen = false;
 
-  const failure = (reason: StreamGateFailureReason, frameData?: string): StreamGateResult => ({
+  const failure = (
+    reason: StreamGateFailureReason,
+    frameData?: string,
+    terminalBeforeContent = false
+  ): StreamGateResult => ({
     committed: false,
     error: new StreamPrecommitError(reason, {
       family: options.family,
@@ -186,6 +309,7 @@ export async function runStreamContentGate(
       framesSeen,
       bufferedBytes,
       echoExcludedBytes,
+      terminalBeforeContent,
     }),
   });
 
@@ -217,6 +341,7 @@ export async function runStreamContentGate(
 
     if (readResult.done) {
       // 冲刷尾部未终止帧（无结尾空行的流）
+      let sawTerminal = false;
       for (const frame of parser.finish()) {
         framesSeen++;
         const verdict = classifyFrame(options.family, frame.eventName, frame.data);
@@ -225,8 +350,19 @@ export async function runStreamContentGate(
         }
         if (verdict === "error") return failure("gate_error", frame.data);
         if (verdict === "malformed") return failure("decode_error", frame.data);
+        if (verdict === "terminal") {
+          // 干净完成即成功响应：连同缓冲前缀一起透传（尾帧已读完，readerDone=true）
+          if (
+            options.family === "openai-responses" &&
+            isCleanResponsesCompletion(frame.eventName, frame.data)
+          ) {
+            return commit(frame.eventName, true);
+          }
+          sawTerminal = true;
+        }
       }
-      return failure("empty_stream");
+      // sawTerminal=false 即上游断流 / 空 body：真实供应商侧异常，与「干净终止但无内容」区分
+      return failure("empty_stream", undefined, sawTerminal);
     }
 
     const chunk = readResult.value;
@@ -255,8 +391,17 @@ export async function runStreamContentGate(
         return failure("decode_error", frame.data);
       }
       if (verdict === "terminal") {
-        // 干净终止先于任何内容 = 空流
-        return failure("empty_stream", frame.data);
+        // openai-responses 的干净完成（status=completed 且无 error）是协议层面的成功响应：
+        // 空回复合法（审阅 / watchdog 类 prompt 的契约就是无问题时沉默），直接提交透传，
+        // 不能放大成同供应商重试 + 跨供应商 failover
+        if (
+          options.family === "openai-responses" &&
+          isCleanResponsesCompletion(frame.eventName, frame.data)
+        ) {
+          return commit(frame.eventName, false);
+        }
+        // 其余干净终止先于任何内容 = 空流
+        return failure("empty_stream", frame.data, true);
       }
       // neutral: 继续缓冲；请求回显帧的载荷不计入字节上限（豁免额度另有上限，见下方判定）
       if (isRequestEchoFrame(options.family, frame.eventName, frame.data)) {
