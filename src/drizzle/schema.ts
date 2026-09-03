@@ -1079,7 +1079,12 @@ export const systemSettings = pgTable('system_settings', {
 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-});
+}, (table) => ({
+  legacyHedgeMaxInFlightRange: check(
+    'system_settings_legacy_hedge_max_in_flight_range',
+    sql`${table.legacyHedgeMaxInFlight} >= 1 AND ${table.legacyHedgeMaxInFlight} <= 4`
+  ),
+}));
 
 // 每日工作总结分组配置：按优先级顺序穷举各分组内的 provider，全部失败才进下一分组
 export const dailySummaryGroups = pgTable('daily_summary_groups', {
@@ -1096,12 +1101,7 @@ export const dailySummaryGroups = pgTable('daily_summary_groups', {
 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-}, (table) => ({
-  legacyHedgeMaxInFlightRange: check(
-    'system_settings_legacy_hedge_max_in_flight_range',
-    sql`${table.legacyHedgeMaxInFlight} >= 1 AND ${table.legacyHedgeMaxInFlight} <= 4`
-  ),
-}));
+});
 
 // Notification Settings table - Webhook 通知配置
 export const notificationSettings = pgTable('notification_settings', {
