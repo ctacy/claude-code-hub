@@ -229,6 +229,149 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.avail_bucket_1m": {
+      "name": "avail_bucket_1m",
+      "schema": "",
+      "columns": {
+        "provider_id": {
+          "name": "provider_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bucket_start": {
+          "name": "bucket_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "success_cnt": {
+          "name": "success_cnt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "failure_cnt": {
+          "name": "failure_cnt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "excluded_cnt": {
+          "name": "excluded_cnt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "latency_cnt": {
+          "name": "latency_cnt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "latency_sum_ms": {
+          "name": "latency_sum_ms",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_request_at": {
+          "name": "last_request_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_avail_bucket_1m_time": {
+          "name": "idx_avail_bucket_1m_time",
+          "columns": [
+            {
+              "expression": "bucket_start",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "avail_bucket_1m_pkey": {
+          "name": "avail_bucket_1m_pkey",
+          "columns": [
+            "provider_id",
+            "bucket_start"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.avail_current": {
+      "name": "avail_current",
+      "schema": "",
+      "columns": {
+        "provider_id": {
+          "name": "provider_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'unknown'"
+        },
+        "availability": {
+          "name": "availability",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "request_count": {
+          "name": "request_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_request_at": {
+          "name": "last_request_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.cloud_pricing_catalog": {
       "name": "cloud_pricing_catalog",
       "schema": "",
@@ -804,6 +947,49 @@
           "primaryKey": false,
           "notNull": false
         },
+        "session_identity": {
+          "name": "session_identity",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_identity_kind": {
+          "name": "session_identity_kind",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "affinity_scope_tag": {
+          "name": "affinity_scope_tag",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "affinity_fingerprint": {
+          "name": "affinity_fingerprint",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "affinity_fingerprint_chain": {
+          "name": "affinity_fingerprint_chain",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_replay": {
+          "name": "is_replay",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "replay_source_request_id": {
+          "name": "replay_source_request_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "request_sequence": {
           "name": "request_sequence",
           "type": "integer",
@@ -813,6 +999,12 @@
         },
         "provider_chain": {
           "name": "provider_chain",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "routing_trace": {
+          "name": "routing_trace",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -861,6 +1053,12 @@
         },
         "ttfb_ms": {
           "name": "ttfb_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_byte_ms": {
+          "name": "first_byte_ms",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -966,6 +1164,36 @@
         "messages_count": {
           "name": "messages_count",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cache_compatibility_key": {
+          "name": "cache_compatibility_key",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cache_score_eligible": {
+          "name": "cache_score_eligible",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cache_score_excluded_reason": {
+          "name": "cache_score_excluded_reason",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "theoretical_cache_tokens": {
+          "name": "theoretical_cache_tokens",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cache_ttl_bucket": {
+          "name": "cache_ttl_bucket",
+          "type": "varchar(10)",
           "primaryKey": false,
           "notNull": false
         },
@@ -1113,6 +1341,56 @@
           "method": "btree",
           "with": {}
         },
+        "idx_message_request_proxy_status_active": {
+          "name": "idx_message_request_proxy_status_active",
+          "columns": [
+            {
+              "expression": "\"created_at\" DESC NULLS LAST",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"message_request\".\"deleted_at\" IS NULL AND \"message_request\".\"is_replay\" = false AND \"message_request\".\"status_code\" IS NULL AND (\"message_request\".\"blocked_by\" IS NULL OR \"message_request\".\"blocked_by\" <> 'warmup')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_message_request_proxy_status_latest": {
+          "name": "idx_message_request_proxy_status_latest",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"updated_at\" DESC NULLS LAST",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"message_request\".\"deleted_at\" IS NULL AND \"message_request\".\"is_replay\" = false AND \"message_request\".\"status_code\" IS NOT NULL AND (\"message_request\".\"blocked_by\" IS NULL OR \"message_request\".\"blocked_by\" <> 'warmup')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "idx_message_request_session_id": {
           "name": "idx_message_request_session_id",
           "columns": [
@@ -1163,6 +1441,90 @@
           ],
           "isUnique": false,
           "where": "\"message_request\".\"deleted_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_message_request_session_identity_created_at": {
+          "name": "idx_message_request_session_identity_created_at",
+          "columns": [
+            {
+              "expression": "COALESCE(\"session_identity\", \"session_id\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"created_at\" DESC NULLS LAST",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"message_request\".\"deleted_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_message_request_session_identity_prefix": {
+          "name": "idx_message_request_session_identity_prefix",
+          "columns": [
+            {
+              "expression": "COALESCE(\"session_identity\", \"session_id\") varchar_pattern_ops",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"message_request\".\"deleted_at\" IS NULL AND (\"message_request\".\"blocked_by\" IS NULL OR \"message_request\".\"blocked_by\" <> 'warmup')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_message_request_session_id_prefix_cover": {
+          "name": "idx_message_request_session_id_prefix_cover",
+          "columns": [
+            {
+              "expression": "\"session_id\" varchar_pattern_ops",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"message_request\".\"deleted_at\" IS NULL AND (\"message_request\".\"blocked_by\" IS NULL OR \"message_request\".\"blocked_by\" <> 'warmup')",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1996,6 +2358,485 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.outbox_events": {
+      "name": "outbox_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "aggregate_type": {
+          "name": "aggregate_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "aggregate_id": {
+          "name": "aggregate_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_outbox_events_unpublished": {
+          "name": "idx_outbox_events_unpublished",
+          "columns": [
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"outbox_events\".\"published_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "outbox_events_event_id_key": {
+          "name": "outbox_events_event_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.outbox_processed": {
+      "name": "outbox_processed",
+      "schema": "",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.proj_applied_requests": {
+      "name": "proj_applied_requests",
+      "schema": "",
+      "columns": {
+        "request_id": {
+          "name": "request_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "applied_at": {
+          "name": "applied_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.projection_meta": {
+      "name": "projection_meta",
+      "schema": "",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.provider_batch_apply_operations": {
+      "name": "provider_batch_apply_operations",
+      "schema": "",
+      "columns": {
+        "claim_key": {
+          "name": "claim_key",
+          "type": "varchar(256)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "preview_token": {
+          "name": "preview_token",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload_fingerprint": {
+          "name": "payload_fingerprint",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "undo_token": {
+          "name": "undo_token",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "undo_expires_at": {
+          "name": "undo_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "undo_consumed_at": {
+          "name": "undo_consumed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result": {
+          "name": "result",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uniq_provider_batch_apply_operations_preview_token": {
+          "name": "uniq_provider_batch_apply_operations_preview_token",
+          "columns": [
+            {
+              "expression": "preview_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uniq_provider_batch_apply_operations_operation_id": {
+          "name": "uniq_provider_batch_apply_operations_operation_id",
+          "columns": [
+            {
+              "expression": "operation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uniq_provider_batch_apply_operations_undo_token": {
+          "name": "uniq_provider_batch_apply_operations_undo_token",
+          "columns": [
+            {
+              "expression": "undo_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_provider_batch_apply_operations_expires_at": {
+          "name": "idx_provider_batch_apply_operations_expires_at",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.provider_cache_effectiveness": {
+      "name": "provider_cache_effectiveness",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cache_ttl_bucket": {
+          "name": "cache_ttl_bucket",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "window_start": {
+          "name": "window_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "window_end": {
+          "name": "window_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sample_count": {
+          "name": "sample_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "eligible_count": {
+          "name": "eligible_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "theoretical_cache_tokens": {
+          "name": "theoretical_cache_tokens",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "observed_cache_read_tokens": {
+          "name": "observed_cache_read_tokens",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "raw_effectiveness_bp": {
+          "name": "raw_effectiveness_bp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "confidence_bp": {
+          "name": "confidence_bp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "effectiveness_bp": {
+          "name": "effectiveness_bp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_provider_cache_effectiveness_window": {
+          "name": "idx_provider_cache_effectiveness_window",
+          "columns": [
+            {
+              "expression": "provider_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "model",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "window_start",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.provider_endpoint_probe_logs": {
       "name": "provider_endpoint_probe_logs",
       "schema": "",
@@ -2575,6 +3416,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "new_api_access_token": {
+          "name": "new_api_access_token",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "new_api_user_id": {
+          "name": "new_api_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "provider_vendor_id": {
           "name": "provider_vendor_id",
           "type": "integer",
@@ -3145,6 +3998,135 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.replay_payloads": {
+      "name": "replay_payloads",
+      "schema": "",
+      "columns": {
+        "replay_id": {
+          "name": "replay_id",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "verifier": {
+          "name": "verifier",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scope_tag": {
+          "name": "scope_tag",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key_id": {
+          "name": "key_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "format": {
+          "name": "format",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_code": {
+          "name": "status_code",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "headers_json": {
+          "name": "headers_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "byte_size": {
+          "name": "byte_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_message_request_id": {
+          "name": "source_message_request_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_replay_payloads_key_id": {
+          "name": "idx_replay_payloads_key_id",
+          "columns": [
+            {
+              "expression": "key_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_replay_payloads_expires_at": {
+          "name": "idx_replay_payloads_expires_at",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.request_filters": {
       "name": "request_filters",
       "schema": "",
@@ -3478,7 +4460,7 @@
           "type": "varchar(128)",
           "primaryKey": false,
           "notNull": true,
-          "default": "'Claude Code Hub'"
+          "default": "'CC Hub'"
         },
         "allow_global_usage_view": {
           "name": "allow_global_usage_view",
@@ -3521,6 +4503,62 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "legacy_hedge_max_in_flight": {
+          "name": "legacy_hedge_max_in_flight",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "discovery_enabled": {
+          "name": "discovery_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "discovery_concurrency": {
+          "name": "discovery_concurrency",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "max_discovery_rounds": {
+          "name": "max_discovery_rounds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2
+        },
+        "discovery_sla_ms": {
+          "name": "discovery_sla_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10000
+        },
+        "sticky_sla_ms": {
+          "name": "sticky_sla_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 20000
+        },
+        "racing_total_timeout_ms": {
+          "name": "racing_total_timeout_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 60000
+        },
+        "sticky_timeout_cooldown_ms": {
+          "name": "sticky_timeout_cooldown_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 300000
         },
         "timezone": {
           "name": "timezone",
@@ -3756,6 +4794,39 @@
           "notNull": true,
           "default": 5
         },
+        "stream_gate_mode": {
+          "name": "stream_gate_mode",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'enforce'"
+        },
+        "affinity_ignore_client_session_id": {
+          "name": "affinity_ignore_client_session_id",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "replay_enabled": {
+          "name": "replay_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "replay_cache_ttl_minutes": {
+          "name": "replay_cache_ttl_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 30
+        },
+        "cache_effectiveness_enabled": {
+          "name": "cache_effectiveness_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
         "daily_summary_prompt": {
           "name": "daily_summary_prompt",
           "type": "text",
@@ -3767,6 +4838,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "enable_memory_admission": {
+          "name": "enable_memory_admission",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -3788,7 +4866,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "system_settings_legacy_hedge_max_in_flight_range": {
+          "name": "system_settings_legacy_hedge_max_in_flight_range",
+          "value": "\"system_settings\".\"legacy_hedge_max_in_flight\" >= 1 AND \"system_settings\".\"legacy_hedge_max_in_flight\" <= 4"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.usage_ledger": {
@@ -3864,6 +4947,49 @@
         "session_id": {
           "name": "session_id",
           "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_identity": {
+          "name": "session_identity",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_identity_kind": {
+          "name": "session_identity_kind",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "affinity_scope_tag": {
+          "name": "affinity_scope_tag",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "affinity_fingerprint": {
+          "name": "affinity_fingerprint",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "affinity_fingerprint_chain": {
+          "name": "affinity_fingerprint_chain",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_replay": {
+          "name": "is_replay",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "replay_source_request_id": {
+          "name": "replay_source_request_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -3979,6 +5105,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "first_byte_ms": {
+          "name": "first_byte_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "client_ip": {
           "name": "client_ip",
           "type": "varchar(45)",
@@ -4025,7 +5157,22 @@
             }
           ],
           "isUnique": false,
-          "where": "\"usage_ledger\".\"blocked_by\" IS NULL",
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL AND \"usage_ledger\".\"is_replay\" = false",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_usage_ledger_user_id_reset": {
+          "name": "idx_usage_ledger_user_id_reset",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -4047,7 +5194,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"usage_ledger\".\"blocked_by\" IS NULL",
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL AND \"usage_ledger\".\"is_replay\" = false",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -4069,7 +5216,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"usage_ledger\".\"blocked_by\" IS NULL",
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL AND \"usage_ledger\".\"is_replay\" = false",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -4126,6 +5273,105 @@
           "method": "btree",
           "with": {}
         },
+        "idx_usage_ledger_session_identity_created_at": {
+          "name": "idx_usage_ledger_session_identity_created_at",
+          "columns": [
+            {
+              "expression": "COALESCE(\"session_identity\", \"session_id\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"created_at\" DESC NULLS LAST",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL AND \"usage_ledger\".\"is_replay\" = false",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_usage_ledger_session_identity": {
+          "name": "idx_usage_ledger_session_identity",
+          "columns": [
+            {
+              "expression": "COALESCE(\"session_identity\", \"session_id\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_usage_ledger_session_identity_prefix": {
+          "name": "idx_usage_ledger_session_identity_prefix",
+          "columns": [
+            {
+              "expression": "COALESCE(\"session_identity\", \"session_id\") varchar_pattern_ops",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_usage_ledger_session_id_prefix": {
+          "name": "idx_usage_ledger_session_id_prefix",
+          "columns": [
+            {
+              "expression": "\"session_id\" varchar_pattern_ops",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "idx_usage_ledger_model": {
           "name": "idx_usage_ledger_model",
           "columns": [
@@ -4171,7 +5417,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"usage_ledger\".\"blocked_by\" IS NULL",
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL AND \"usage_ledger\".\"is_replay\" = false",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -4205,7 +5451,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"usage_ledger\".\"blocked_by\" IS NULL",
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL AND \"usage_ledger\".\"is_replay\" = false",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -4239,7 +5485,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"usage_ledger\".\"blocked_by\" IS NULL",
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL AND \"usage_ledger\".\"is_replay\" = false",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -4267,7 +5513,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"usage_ledger\".\"blocked_by\" IS NULL",
+          "where": "\"usage_ledger\".\"blocked_by\" IS NULL AND \"usage_ledger\".\"is_replay\" = false",
           "concurrently": false,
           "method": "btree",
           "with": {}
