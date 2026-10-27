@@ -76,7 +76,7 @@ export function CostLeaderboardTable({
     );
   }
 
-  function SortHeader({ k, children }: { k: SortKey; children: React.ReactNode }) {
+  function renderSortHeader(k: SortKey, children: React.ReactNode) {
     const active = sort?.key === k;
     const dir = active ? sort?.dir : null;
     return (
@@ -108,13 +108,13 @@ export function CostLeaderboardTable({
         <div className="w-10 pl-3 shrink-0 text-right">#</div>
         <div className="flex-1 px-3">用户</div>
         <div className="w-28 px-3 shrink-0 text-right">
-          <SortHeader k="totalRequests">请求数</SortHeader>
+          {renderSortHeader("totalRequests", "请求数")}
         </div>
         <div className="w-28 px-3 shrink-0 text-right">
-          <SortHeader k="totalTokens">Token 用量</SortHeader>
+          {renderSortHeader("totalTokens", "Token 用量")}
         </div>
         <div className="w-32 px-3 pr-4 shrink-0 text-right">
-          <SortHeader k="totalCost">消耗金额</SortHeader>
+          {renderSortHeader("totalCost", "消耗金额")}
         </div>
         {comparisonLabel && (
           <div className="w-24 px-3 pr-4 shrink-0 text-right">{comparisonLabel}</div>

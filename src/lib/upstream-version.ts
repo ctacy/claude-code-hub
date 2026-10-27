@@ -13,7 +13,7 @@ const UPSTREAM_REPO = {
  * 本 fork 当前合入的上游版本（同步上游后需手动更新）
  * 上游 VERSION 文件在合并时总是保留 fork 自身版本，故单独记录
  */
-export const UPSTREAM_BASE_VERSION = "0.9.7";
+export const UPSTREAM_BASE_VERSION = "0.9.8";
 
 const REVALIDATE_SECONDS = 5 * 60; // 5 分钟
 const USER_AGENT = "claude-code-hub";
