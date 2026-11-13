@@ -36,6 +36,8 @@ setGlobalDispatcher(
     connectTimeout,
     headersTimeout,
     bodyTimeout,
+    // undici 8 默认 allowH2=true；显式关闭，使「启用 HTTP/2」关闭时直连真正走 HTTP/1.1
+    allowH2: false,
   })
 );
 

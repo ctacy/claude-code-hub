@@ -94,6 +94,20 @@ describe("Undici - 超时参数注入", () => {
     expect(undiciMocks.setGlobalDispatcher).toHaveBeenCalledTimes(1);
   });
 
+  it("proxy-agent.ts 的全局 Agent 应显式关闭 HTTP/2（undici 8 默认 allowH2=true）", async () => {
+    vi.resetModules();
+    undiciMocks.Agent.mockClear();
+    undiciMocks.setGlobalDispatcher.mockClear();
+
+    await import("@/lib/proxy-agent");
+
+    expect(undiciMocks.Agent).toHaveBeenCalledTimes(1);
+    expect(undiciMocks.Agent).toHaveBeenCalledWith(expect.objectContaining({ allowH2: false }));
+    expect(undiciMocks.setGlobalDispatcher).toHaveBeenCalledWith(
+      undiciMocks.Agent.mock.instances[0]
+    );
+  });
+
   it("createProxyAgentForProvider 应将 headers/body/connect timeout 从 env 注入到 ProxyAgent", async () => {
     process.env.FETCH_CONNECT_TIMEOUT = "4000";
     process.env.FETCH_HEADERS_TIMEOUT = "5000";
